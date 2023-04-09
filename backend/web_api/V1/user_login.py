@@ -38,7 +38,7 @@ class UserLogin(api.ApiBase):
                 #         This should be done this way, so if someone tries to bruteforce the password, it'd be a little
                 #         harder to understand what is wrong.
 
-                # Check that there's no other users with the same nickname and email
+                # Try to find user by their email
                 if user := session.query(tables.User).filter(tables.User.email == request.fields["email"]).first():
                     # Check user password
                     if bcrypt.hashpw(request.fields["password"].encode(), user.password_hash.encode()) != user.password_hash.encode():
