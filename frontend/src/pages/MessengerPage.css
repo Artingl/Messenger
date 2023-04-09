@@ -95,6 +95,8 @@
 }
 
 .messenger-page .chat-placeholder {
+    position: relative;
+
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     font-size: 1.1em;
@@ -105,8 +107,25 @@
     justify-content: center;
     text-align: center;
 
-    width: 80%;
+    width: calc(100% - 20px);
     height: 100%;
+}
+
+.messenger-page .chat-placeholder #create-chat {
+    font-weight: 700;
+    font-size: 0.9em;
+
+    width: fit-content;
+    display: inline;
+    cursor: pointer;
+
+    color: #eee;
+    text-decoration: none;
+    padding: 2px;
+    padding-left: 4px;
+    padding-right: 4px;
+    background-color: #666;
+    border-radius: 4px;
 }
 
 .messenger-page .chats-list ul:hover {
@@ -117,5 +136,14 @@
 .messenger-page .chat {
     background-color: #fafafad6;
     position: absolute;
+}
+
+.create-chat-dialog .chat-create-button {
+    margin-top: 30px;
+}
+
+.create-chat-dialog .chat-title, .create-chat-dialog .chat-create-button {
+    width: 300px;
+    height: 32px;
 }
 

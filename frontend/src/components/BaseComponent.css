@@ -13,7 +13,7 @@
     
     color: #3e3e3e;
     background-color: #d6e0e0d1;
-    backdrop-filter: blur(10px);
+    /*backdrop-filter: blur(10px);*/
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
 }
 
@@ -31,6 +31,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.text-field {
+    margin-left: -5px;
+}
+
+.base-component-div .button {
+    margin-left: 5px;
 }
 
 .base-component-div .button-icon {

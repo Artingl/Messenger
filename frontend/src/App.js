@@ -4,6 +4,8 @@ import $ from "jquery";
 import LoginPage from './pages/LoginPage.js'
 import MessengerPage from './pages/MessengerPage.js'
 
+import PopupDialog from './components/PopupDialog.js'
+
 import './App.css'
 
 
@@ -19,7 +21,10 @@ export default class App extends React.Component {
             userData: {},
 
             isLoggedIn: false,
+            loaderMessage: "",
             isLoading: true,
+
+            popup: undefined,
         };
     }
 
@@ -30,11 +35,12 @@ export default class App extends React.Component {
 
     authenticate()
     {
-        this.setState({ isLoading: true })
+        this.setLoadingState(true, "Loading...")
 
         if (this.state.token === null || this.state.token === undefined)
         {
-            this.setState({ isLoading: false, isLoggedIn: false })
+            this.setLoadingState(false)
+            this.setState({ isLoggedIn: false })
             return;
         }
 
@@ -56,6 +62,8 @@ export default class App extends React.Component {
 
     async apiCall(callback, data, apiMethod, httpMethod)
     {
+        data['token'] = this.state.token
+
         $.ajax({
             url: this.state.server + "/v1/" + apiMethod,
             type: httpMethod,
@@ -68,9 +76,8 @@ export default class App extends React.Component {
     {
         // save user data that we got with the response
         this.setState({ userData: data.settings })
-
         this.forceUpdate(() =>
-            this.setState({ isLoading: false, isLoggedIn: true }))
+            this.setState({ isLoggedIn: true }))
     }
 
     async login(email, password, callback)
@@ -102,15 +109,33 @@ export default class App extends React.Component {
         });
     }
 
+    setLoadingState(state, msg)
+    {
+        this.setState({ isLoading: state, loaderMessage: msg })
+    }
+
+    setPopupDialog(jsx)
+    {
+        if (jsx === undefined)
+        {
+            this.setState({ popup: undefined })
+        }
+        else {
+            this.setState({ popup: <PopupDialog>{jsx}</PopupDialog> })
+        }
+    }
+
     render()
     {
         return (<>
 
             {this.state.isLoading &&
-                <div className="loader">Loading...</div>
+                <div className="loader">{this.state.loaderMessage}</div>
             }
 
             <div id="app" style={{ filter: (this.state.isLoading ? "blur(32px)" : ""), transform: (this.state.isLoading ? "scale(1.3)" : "") }}>
+                {this.state.popup !== undefined && <div className="app-popup">{this.state.popup}</div>}
+
                 {!this.state.isLoggedIn && <LoginPage app={this} />}
                 {this.state.isLoggedIn && <MessengerPage app={this} />}
             </div>

@@ -16,7 +16,7 @@ class MessengerChats(api.ApiBase):
 
     def validate_request(self, request: api.ApiRequest) -> bool:
         # check that token was provided with the request
-        if "token" in request.fields:
+        if "token" not in request.fields:
             return False
 
         # GET request - get chat info
@@ -38,13 +38,12 @@ class MessengerChats(api.ApiBase):
 
         with db.get_session() as session:
             # Try to find the user using token
-            if "token" in request.fields:
-                if not (user := session.query(tables.User).filter(tables.User.token == request.fields["token"]).first()):
-                    # Unable to find the user using email
-                    result.status_code = api.ApiResponse.Codes.BAD_REQUEST
-                    result.code = 1
-                    result.message = "User does not exist."
-                    return result
+            if not (user := session.query(tables.User).filter(tables.User.token == request.fields["token"]).first()):
+                # Unable to find the user using email
+                result.status_code = api.ApiResponse.Codes.BAD_REQUEST
+                result.code = 1
+                result.message = "User does not exist."
+                return result
 
             # Update settings
             user.settings = user_utils.update_settings(user)
