@@ -14,6 +14,7 @@ class ApiVersions:
 class ApiResponse:
     class Codes:
         SUCCESS = 200
+
         NOT_FOUND = 404
         BAD_REQUEST = 400
         METHOD_NOT_ALLOWED = 405

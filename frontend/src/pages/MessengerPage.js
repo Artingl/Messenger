@@ -4,10 +4,10 @@ import $ from "jquery";
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
-
 import TextField from '../components/TextField.js'
 import Button from '../components/Button.js'
 import ChatElement from '../components/ChatElement.js'
+import UsersList from '../components/UsersList.js'
 
 import './MessengerPage.css'
 
@@ -72,9 +72,11 @@ export default class MessengerPage extends React.Component
                 <TextField
                     hint="Chat title"
                     setValue={(value) => this.setState({ email: value }) }
-                    className="chat-title"
+                    className="chat-create-title"
                 />
 
+                <UsersList />
+                
                 {/* Create button */}
                 <Button
                     onClick={() => this.loginEvent()}

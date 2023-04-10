@@ -1,3 +1,4 @@
+/* Global values for all components */
 .base-component {
     width: 100%;
     height: 100%;
@@ -28,6 +29,8 @@
     width: 100%;
     height: 100%;
 
+    margin-left: 5px;
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -35,6 +38,7 @@
 
 .text-field {
     margin-left: -5px;
+    width: calc(100% + 5px);
 }
 
 .base-component-div .button {
@@ -45,6 +49,62 @@
     cursor: pointer;
 	transition: 0.1s cubic-bezier(0.85, 0, 0.15, 1);
     border-radius: 8px;
+}
+
+.base-component-div #users-list {
+    margin-top: 30px;
+    margin-left: 5px;
+
+    width: 277px;
+    height: fit-content;
+    min-height: 80px;
+    max-height: 400px;
+
+    background-color: #d6e0e0d1;
+    border-radius: 8px;
+
+    box-shadow: rgb(99 99 99 / 20%) 0px 2px 8px 0px;
+
+    padding: 10px;
+}
+
+.base-component-div #users-list ul {
+    list-style-type: none;
+}
+
+.base-component-div #users-list #user-add #button {
+    width: 50px;
+    height: 48px;
+
+    margin-top: 15px;
+    margin-left: 5px;
+}
+
+.base-component-div #users-list #user-add #text-field-input {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.1em;
+
+    margin-top: 15px;
+    margin-left: 15px;
+
+    width: calc(100% - 40px);
+    height: 45px;
+}
+
+.base-component-div #users-list #user-add {
+    width: 100%;
+    height: 80px;
+
+    border: 2px solid #bcc0c9;
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, .14);
+
+    display: flex;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+
+	transition: 0.1s cubic-bezier(0.85, 0, 0.15, 1);
 }
 
 .base-component:focus {

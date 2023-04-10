@@ -119,7 +119,7 @@
     display: inline;
     cursor: pointer;
 
-    color: #eee;
+    color: #e7eaeb;
     text-decoration: none;
     padding: 2px;
     padding-left: 4px;
@@ -142,7 +142,7 @@
     margin-top: 30px;
 }
 
-.create-chat-dialog .chat-title, .create-chat-dialog .chat-create-button {
+.create-chat-dialog .chat-create-title, .create-chat-dialog .chat-create-button {
     width: 300px;
     height: 32px;
 }
