@@ -80,26 +80,25 @@ class ApiBase:
 
         @blueprint.route(f"/{self.version}/{self.route}", methods=self.methods)
         def handler():
-            # create request instance for the API method class
-            api_request = ApiRequest(
-                route=self.route,
-                method=request.method,
-                # todo: set data filed value based on http method
-                fields=ApiBase.get_fields()
-            )
-
-            # attempt to validate api request
-            if not self.validate_request(api_request):
-                return ApiResponse(
-                        status_code=ApiResponse.Codes.BAD_REQUEST,
-                        message="Bad request."
-                    ).construct()
-
             try:
+                # create request instance for the API method class
+                api_request = ApiRequest(
+                    route=self.route,
+                    method=request.method,
+                    fields=ApiBase.get_fields()
+                )
+
+                # attempt to validate api request
+                if not self.validate_request(api_request):
+                    return ApiResponse(
+                            status_code=ApiResponse.Codes.BAD_REQUEST,
+                            message="Bad request. Check the request data."
+                        ).construct()
+
                 # execute methods
                 return self.request(api_request).construct()
             except Exception as e:
-                logger.exception(f"{self.route} error", e)
+                logger.exception(f"{self.route} | {request.method} error", e)
 
             return self.errorhandler(500)
 
@@ -116,9 +115,11 @@ class ApiBase:
     @classmethod
     def get_fields(cls) -> t.Dict[t.Any, t.Any]:
         method = request.method
-
-        if method in ["GET", "POST"]:
+        
+        if method == "GET":
             return request.args
+        elif method == "POST":
+            return request.get_json()
 
         return {}
 

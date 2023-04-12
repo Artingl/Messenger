@@ -52,32 +52,48 @@
 }
 
 .base-component-div #users-list {
-    margin-top: 30px;
     margin-left: 5px;
 
     width: 277px;
     height: fit-content;
-    min-height: 80px;
-    max-height: 400px;
+    max-height: 270px; 
 
     background-color: #d6e0e0d1;
     border-radius: 8px;
 
     box-shadow: rgb(99 99 99 / 20%) 0px 2px 8px 0px;
 
-    padding: 10px;
+    padding: 10px 12px 10px 10px;
+}
+
+.base-component-div #users-list ul #err-msg {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 1.1em;
+    color: #999;
+    
+    padding-top: 15px;
+    padding-bottom: 25px;
+    text-align: center;
 }
 
 .base-component-div #users-list ul {
+    width: calc(100% + 10px);
+    max-height: 180px;
+    min-height: fit-content;
+
+    padding-bottom: 5px;
+    margin-top: 10px;
+
     list-style-type: none;
+    
+    overflow-y: scroll;
+    overflow-x: hidden;
 }
 
-.base-component-div #users-list #user-add #button {
-    width: 50px;
-    height: 48px;
-
-    margin-top: 15px;
-    margin-left: 5px;
+.base-component-div #users-list ul:empty {
+    padding: 0;
+    margin: 0;
 }
 
 .base-component-div #users-list #user-add #text-field-input {
@@ -85,10 +101,9 @@
     font-weight: 700;
     font-size: 1.1em;
 
-    margin-top: 15px;
-    margin-left: 15px;
+    margin: 15px;
 
-    width: calc(100% - 40px);
+    width: calc(100% - 45px);
     height: 45px;
 }
 

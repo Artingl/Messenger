@@ -3,11 +3,13 @@ import $ from "jquery";
 
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
+import AddIcon from '@mui/icons-material/Add';
 
 import TextField from '../components/TextField.js'
 import Button from '../components/Button.js'
 import ChatElement from '../components/ChatElement.js'
-import UsersList from '../components/UsersList.js'
+import UsersFinder from '../components/UsersFinder.js'
+import ChatWindow from '../components/ChatWindow.js'
 
 import './MessengerPage.css'
 
@@ -22,6 +24,7 @@ export default class MessengerPage extends React.Component
             isMenuShown: false,
             searchValue: "",
             chatOpened: false,
+            chatUsers: [],
             chats: [],
 
             // wait interval on API error. It will grow up to 60 seconds on every error
@@ -46,9 +49,10 @@ export default class MessengerPage extends React.Component
             chatsPool.push(<ChatElement
                 onClick={(chatId) => this.openChat(chatId)}
                 chatId={0}
-                avatar="https://i.stack.imgur.com/E8aL3.jpg?s=128&g=1"
-                title="Hello world"
-                description="Did you know that you can use this messenger as a tool to communicate with your team members. This allows you to"
+                avatar={chat.settings.avatar}
+                avatarLetter={chat.settings.avatar === "default" ? chat.chat_title[0] : undefined}
+                title={chat.chat_title}
+                description="New"
             />)
         }
 
@@ -68,21 +72,7 @@ export default class MessengerPage extends React.Component
     {
         this.props.app.setPopupDialog(<>
             <form className="create-chat-dialog">
-                {/* Chat title field */}
-                <TextField
-                    hint="Chat title"
-                    setValue={(value) => this.setState({ email: value }) }
-                    className="chat-create-title"
-                />
-
-                <UsersList />
-                
-                {/* Create button */}
-                <Button
-                    onClick={() => this.loginEvent()}
-                    text="Create"
-                    className="chat-create-button"
-                />
+                <UsersFinder app={this.props.app} onUserClick={(userData) => this.requestChatCreate(userData)} />
             </form>
         </>)
     }
@@ -95,30 +85,45 @@ export default class MessengerPage extends React.Component
         this.props.app.apiCall((isSuccess, result) => {
             if (isSuccess)
             {
-                this.updateChats(result.data)
+                this.updateChats(result.data[0])
             }
             else {
-                // unable get result
-                
-                // make pseudo timer in the loading state
-                const maxI = this.state.lastInterval
-                for (let i = 0; i < this.state.lastInterval; i++)
-                {
-                    setTimeout(() => {
-                        this.props.app.setLoadingState(true, "Unable to get chats list. Retrying in " + (maxI - i) + " seconds...")
-                    }, 1000 * i)
+                if (result.code === 2)
+                {   // chats not found
+                    this.updateChats([])
                 }
+                else { // unable get result
+                    // make pseudo timer in the loading state
+                    const maxI = this.state.lastInterval
+                    for (let i = 0; i < this.state.lastInterval; i++)
+                    {
+                        setTimeout(() => {
+                            this.props.app.setLoadingState(true, "Unable to get chats list. Retrying in " + (maxI - i) + " seconds... (Error code: " + result.code + ")")
+                        }, 1000 * i)
+                    }
 
-                setTimeout(() => {
-                    this.requestChats()
-                }, 1000 * this.state.lastInterval)
+                    setTimeout(() => {
+                        this.requestChats()
+                    }, 1000 * this.state.lastInterval)
 
-                this.setState({ lastInterval: (this.state.lastInterval < 60 ? this.state.lastInterval + 5 : 60) })
+                    this.setState({ lastInterval: (this.state.lastInterval < 60 ? this.state.lastInterval + 5 : 60) })
+                }
             }
         }, { }, "/messenger/chats", "GET")
-   }
+    }
 
-    openChat(chat_id)
+    requestChatCreate(userData)
+    {
+        // Tell the server that we want to create a dialog. Then open it.
+        this.props.app.apiCall((isSuccess, result) => {
+            if (isSuccess)
+            {
+                //this.setState({ chatOpened: true, chatUsers: [userData] })
+            }
+        }, { members: [userData.uid], chatTitle: `${userData.nickname}, ${this.props.app.state.userData.nickname}` }, "/messenger/chats", "POST")
+    }
+
+    openChat(chatId)
     {
     }
 
@@ -162,14 +167,18 @@ export default class MessengerPage extends React.Component
                     />
                 </div>
 
+                {/* Button for creating new chats */}
+                <AddIcon id="create-chat" onClick={() => this.createChat()} />
+
                 <ul style={{ transform: "translateX(" + (!this.state.isMenuShown ? "0px" : "100%") + ")" }}>{this.state.chats}</ul>
             </div>
 
             {/* Current opened chat */}
-            <div className="chat">
-                <div className="chat-placeholder noselect">
+            <div className="chat" style={this.state.chatOpened ? { zIndex: 2 } : {}}>
+                {!this.state.chatOpened && <div className="chat-placeholder noselect">
                     <p>Open any chat...</p>
-                </div>
+                </div>}
+                {this.state.chatOpened && <ChatWindow app={this.props.app} usersInfo={this.props.chatUsers} />}
             </div>
 
         </div>);

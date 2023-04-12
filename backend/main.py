@@ -8,8 +8,8 @@ from loguru import logger
 import builtins
 
 
-def __print(msg, **kwargs):
-    logger.debug(msg, **kwargs)
+def __print(msg, *args, sep=' ', **kwargs):
+    logger.debug(str(msg) + sep.join([str(i) for i in [""] + list(args)]), **kwargs)
 
 
 if __name__ == "__main__":

@@ -29,9 +29,26 @@ export default class App extends React.Component {
         };
     }
 
+    keyUpHandler(event) 
+    {
+        if (event.code === "Escape")
+        {
+            this.closePopupDialog()
+        }
+    }
+
     componentDidMount()
     {
+        // add events and authenticate
+        $(document).on("keyup", e => this.keyUpHandler(e))
+
         this.authenticate()
+    }
+
+    componentWillUnmount()
+    {
+        // remove events
+        $(document).off("keyup")
     }
 
     authenticate()
@@ -65,27 +82,42 @@ export default class App extends React.Component {
     {
         data['token'] = this.state.token
 
+        // todo: remove double slashes in url
         $.ajax({
-            url: this.state.server + "/v1/" + apiMethod,
+            url: this.state.server + "/v1" + apiMethod,
             type: httpMethod,
-            data: data,
-            success: (res) => { callback(true, res) }
-        }).catch((err) => { callback(false, err) });
+            data: (httpMethod === "GET" ? data : JSON.stringify(data)),
+            contentType: "application/json",
+            dataType: "json",
+            success: (res) => { callback(res.code === 0, res) }
+        }).catch((err) => {
+            err = err.responseJSON;
+            if (err === undefined || err === null || err.code === undefined)
+            {
+                err = {};
+                err.code = -1;
+            }
+
+            callback(false, err)
+        });
     }
 
     authenticateSuccess(data)
     {
         // save user data that we got with the response
-        this.setState({ userData: data.settings })
+        this.setState({ userData: data })
         this.forceUpdate(() =>
             this.setState({ isLoggedIn: true }))
     }
 
     async login(email, password, callback)
     {
+        // todo: change to apiCall method
         return $.ajax({
             url: this.state.server + "/v1/user/login",
             type: 'GET',
+            contentType: "application/json",
+            dataType: "json",
             data: { email: email, password: password },
             success: (res) => {
                 // send result to the callback

@@ -28,7 +28,7 @@ class UserLogin(api.ApiBase):
             # Check if we want to login using token or password
             if "token" in request.fields:
                 if not (user := session.query(tables.User).filter(tables.User.token == request.fields["token"]).first()):
-                    # Unable to find the user using email
+                    # Unable to find the user using token
                     result.status_code = api.ApiResponse.Codes.BAD_REQUEST
                     result.code = 1
                     result.message = "User does not exist."

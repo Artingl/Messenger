@@ -5,6 +5,7 @@ import web_api.api as api
 from database import db, tables
 from utils import basic_utils, user_utils
 
+import time
 import bcrypt
 import secrets
 
@@ -45,7 +46,7 @@ class UserRegister(api.ApiBase):
 
             # Set up fields
             user = tables.User()
-            user.login = request.fields["login"]
+            user.login = "@" + request.fields["login"]
             user.email = request.fields["email"]
             user.password_hash = bcrypt.hashpw(request.fields["password"].encode(), bcrypt.gensalt()).decode()
             user.nickname = request.fields["nickname"]
