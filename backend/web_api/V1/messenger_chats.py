@@ -19,7 +19,7 @@ class MessengerChats(api.ApiBase):
         if "token" not in request.fields:
             return False
 
-        # GET request - get chat info
+        # GET request - get chats info
         # POST request - create a new chat
 
         if request.method == "GET":
@@ -48,10 +48,10 @@ class MessengerChats(api.ApiBase):
             # Update settings
             user.settings = user_utils.update_settings(user)
 
-            # GET request - get chat info
+            # GET request - get chats info
             # POST request - create a new chat
             if request.method == "GET":
-                # Try to find the chats where the user as a member
+                # Try to find chats with the user as a member
                 if not (found_chats := session.query(tables.Chats).filter(tables.Chats.members.any(user.uid)).all()):
                     # Unable to find any chats
                     result.status_code = api.ApiResponse.Codes.BAD_REQUEST
@@ -69,10 +69,17 @@ class MessengerChats(api.ApiBase):
                     
                     found_chat.settings = chat_utils.update_settings(found_chat)
 
+                    values['uid'] = found_chat.uid
                     values['members'] = found_chat.members
                     values['chat_title'] = found_chat.chat_title
                     values['register_timestamp'] = found_chat.register_timestamp
                     values['settings'] = chat_utils.update_settings(found_chat)
+                    values['last_message'] = {}
+
+                    # Check if any messages in the chat
+                    if len(found_chat.messages) > 0:
+                        # Send last message in the chat to the client
+                        values['last_message'] = found_chat.messages[-1]
 
                     # Add chats info to the result
                     data.append(values)
@@ -81,12 +88,18 @@ class MessengerChats(api.ApiBase):
             elif request.method == "POST":
                 # Initialize a new chat
                 chat = tables.Chats()
-                chat.chat_title = request.fields["chatTitle"]
+
+                # Chat title cannot be longer than 32 symbols
+                chat.chat_title = request.fields["chatTitle"][:32]
 
                 chat.members = list(request.fields["members"]) + [user.uid]
                 chat.register_timestamp = int(time.time())
                 chat.settings = chat_utils.update_settings(chat)
      
+                # Add 'hello' message to the chat
+                chat.messages = []
+                chat_utils.generate_chat_message(f"Chat '{chat.chat_title}' was created!", [], user_utils.get_admin_bot(), chat)
+
                 # Attempt to create the chat
                 session.add(chat)
                 session.commit()
@@ -95,10 +108,12 @@ class MessengerChats(api.ApiBase):
                 chat.settings = chat_utils.update_settings(chat)
 
                 # Return chat info
+                result.data['uid'] = chat.uid
                 result.data['register_timestamp'] = chat.register_timestamp
                 result.data['settings'] = chat_utils.public_settings(chat)
                 result.data['chat_title'] = chat.chat_title
                 result.data['members'] = chat.members
+                result.data['last_message'] = chat.messages[-1]
 
         return result
 

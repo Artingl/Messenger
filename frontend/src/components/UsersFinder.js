@@ -49,7 +49,7 @@ export default class UsersFinder extends React.Component
                 {
                     let user = result.data[0][i]
 
-                    // if user did not set an avatar, show their first letter in nickname
+                    // if user did not set an avatar, show their first letter from nickname
                     if (user.settings.avatar === "default")
                     {
                         resultArray.push(<ChatElement  
@@ -101,7 +101,7 @@ export default class UsersFinder extends React.Component
         return <div style={this.props.style} className={"base-component-div " + (this.props.className !== undefined ? this.props.className : "")}>
             <div id="users-list">
                 <div id="user-add">
-                    <TextField hint="User Info" setValue={(value) => this.setUserInfo(value)} />
+                    <TextField hint="User ID or Nickname" setValue={(value) => this.setUserInfo(value)} />
                 </div>
 
                 <ul>{this.state.usersList}</ul>

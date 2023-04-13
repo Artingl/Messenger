@@ -1,0 +1,46 @@
+.chat-message {
+    width: 100%;
+    height: fit-content;
+}
+
+.chat-message #left, .chat-message #right {
+    width: fit-content;
+    max-width: 35%;
+
+    height: fit-content;
+
+    padding: 8px 10px 8px 10px;
+    margin: 8px 25px 8px 25px;
+
+    box-shadow: rgb(99 99 99 / 20%) 0px 2px 8px 0px;
+    border-radius: 8px;
+
+    animation: message-appear 0.3s cubic-bezier(0.85, 0, 0.15, 1);;
+    
+    color: #333;
+
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.chat-message #left {
+    float: right;
+    background-color: #cdcdb0;
+    transform-origin: bottom right;
+}
+
+.chat-message #right {
+    background-color: #c4d8d8;
+    transform-origin: bottom left;
+}
+
+@keyframes message-appear {
+    0% {
+        transform: scale(0);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}

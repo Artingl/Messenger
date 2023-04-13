@@ -69,7 +69,7 @@ class MessengerUserInfo(api.ApiBase):
                     result.message = "user_info_query should be longer than 2 symbols."
                     return result
 
-                # If find_query if prefixed with @, that means we should search only by logins
+                # If find_query is prefixed with @, that means we should search only by logins
                 if find_query.startswith("@"):
                     if not (found_users := session.query(tables.User).filter(tables.User.login == find_query).all()):
                         # Unable to find the user using the data from client

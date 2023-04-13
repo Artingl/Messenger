@@ -12,6 +12,9 @@ class Chats(db.Base):
     # Members of the chat (user ids)
     members = Column(ARRAY(Integer), nullable=False)
 
+    # Chat messages
+    messages = Column(ARRAY(JSON), default={})
+
     # Timestamp in seconds since the chat was created
     register_timestamp = Column(Integer, nullable=False)
 

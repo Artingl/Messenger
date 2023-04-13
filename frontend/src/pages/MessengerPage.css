@@ -128,14 +128,6 @@
     border-radius: 4px;
 }
 
-.messenger-page .chats-list #create-chat
-{
-    margin: 5px;
-    padding: 2px;
-    
-    cursor: pointer;
-}
-
 .messenger-page .chats-list ul:hover {
     overflow-y: scroll;
     width: 100%;

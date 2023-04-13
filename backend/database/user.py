@@ -24,7 +24,7 @@ class User(db.Base):
     # Hashed password
     password_hash = Column(String, nullable=False)
 
-    # Timestamp in seconds since the user egistered
+    # Timestamp in seconds since the user registered
     register_timestamp = Column(Integer, nullable=False)
 
     # Region, where was user on register (e.g. US, UK, RU, etc)

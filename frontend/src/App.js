@@ -78,6 +78,12 @@ export default class App extends React.Component {
         }, { token: this.state.token }, "/user/login", "GET")
     }
 
+    logout()
+    {
+        localStorage.removeItem("token")
+        window.location.reload()
+    }
+
     async apiCall(callback, data, apiMethod, httpMethod)
     {
         data['token'] = this.state.token
