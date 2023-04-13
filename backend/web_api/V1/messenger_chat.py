@@ -1,6 +1,8 @@
 from database import db, tables
 from utils import basic_utils, user_utils, chat_utils
 
+from sqlalchemy.orm.attributes import flag_modified
+
 import web_api.api as api
 
 import time
@@ -27,6 +29,14 @@ class MessengerChat(api.ApiBase):
         
         if request.method == "GET":
             return "messages_offset" in request.fields
+        elif request.method == "POST":
+            if "method" not in request.fields:
+                return False
+            
+            if request.fields['method'] == "typing":
+                pass  #  returns true
+            elif request.fields['method'] == "send_message":
+                return "message_content" in request.fields and "attachments" in request.fields
 
         return True
 
@@ -107,7 +117,29 @@ class MessengerChat(api.ApiBase):
                 result.data['settings'] = chat_utils.update_settings(chat)
                 result.data['messages'] = chat.messages[messages_offset:messages_offset + 64]
             elif request.method == "POST":
-                pass
+                if request.fields['method'] == "typing":
+                    # Send event to polling hander
+                    # marker: chatevent_{chat_id}_typing
+                    request.webserver.polling.send(f"chatevent_{chat.uid}_typing", 2000, { "uid": user.uid, "nickname": user.nickname })
+                elif request.fields['method'] == "send_message":
+                    # Create new message
+                    if not (message_info := chat_utils.generate_chat_message(request.fields["message_content"], [], user, chat)):
+                        result.status_code = api.ApiResponse.Codes.BAD_REQUEST
+                        result.code = 4
+                        result.message = "Unable to send message."
+                        return result
+                    
+                    # Append new message and mark 'messages' field as modified
+                    chat.messages.append(message_info)
+                    flag_modified(chat, "messages")
+
+                    # Update chat info
+                    session.merge(chat)
+                    session.commit()
+        
+                    # Send new message event
+                    # marker: chatevent_{chat_id}_new_message
+                    request.webserver.polling.send(f"chatevent_{chat.uid}_new_message", 3000, { "message": chat.messages[-1] })
 
         return result
 

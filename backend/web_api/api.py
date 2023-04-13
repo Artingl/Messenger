@@ -40,10 +40,11 @@ class ApiResponse:
 
 # Request data for API methods
 class ApiRequest:
-    def __init__(self, route: str, method: str, fields: t.Dict[t.Any, t.Any]):
+    def __init__(self, route: str, method: str, fields: t.Dict[t.Any, t.Any], webserver):
         self.route = route
         self.fields = fields.copy()
         self.method = method
+        self.webserver = webserver
 
 
 # Base for all webserver API methods
@@ -85,7 +86,8 @@ class ApiBase:
                 api_request = ApiRequest(
                     route=self.route,
                     method=request.method,
-                    fields=ApiBase.get_fields()
+                    fields=ApiBase.get_fields(),
+                    webserver=webserver
                 )
 
                 # attempt to validate api request

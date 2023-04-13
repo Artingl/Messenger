@@ -84,12 +84,14 @@ export default class App extends React.Component {
         window.location.reload()
     }
 
-    async apiCall(callback, data, apiMethod, httpMethod)
+    async apiCall(callback, data, apiMethod, httpMethod, timeout)
     {
+        // todo: check for ERR_CONNECTION_REFUSED
         data['token'] = this.state.token
 
         // todo: remove double slashes in url
         $.ajax({
+            timeout: timeout === undefined ? 5000 : timeout,
             url: this.state.server + "/v1" + apiMethod,
             type: httpMethod,
             data: (httpMethod === "GET" ? data : JSON.stringify(data)),
@@ -105,7 +107,7 @@ export default class App extends React.Component {
             }
 
             callback(false, err)
-        });
+        })
     }
 
     authenticateSuccess(data)

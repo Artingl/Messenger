@@ -57,6 +57,7 @@ class UserLogin(api.ApiBase):
             user.settings = user_utils.update_settings(user)
 
             # Return full user info
+            result.data['uid'] = user.uid
             result.data['token'] = user.token
             result.data['nickname'] = user.nickname
             result.data['login'] = user.login

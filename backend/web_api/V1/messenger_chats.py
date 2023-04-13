@@ -98,7 +98,9 @@ class MessengerChats(api.ApiBase):
      
                 # Add 'hello' message to the chat
                 chat.messages = []
-                chat_utils.generate_chat_message(f"Chat '{chat.chat_title}' was created!", [], user_utils.get_admin_bot(), chat)
+                chat.messages = [
+                    chat_utils.generate_chat_message(f"Chat '{chat.chat_title}' was created!", [], user_utils.get_admin_bot(), chat)
+                ]
 
                 # Attempt to create the chat
                 session.add(chat)

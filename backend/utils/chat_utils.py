@@ -27,18 +27,16 @@ def public_settings(chat: tables.Chats) -> dict:
     return {key: value for key, value in chat.settings.items() if key in public_values}
 
 
-def generate_chat_message(message: str, attachments: t.List[str], sender: tables.User, chat: tables.Chats) -> bool:
+def generate_chat_message(message: str, attachments: t.List[str], sender: tables.User, chat: tables.Chats):
     # Check if the message does not exceed maximum length
-    if len(message) > 2000:
+    if len(message) > 2000 or not message:
         return False
     
-    chat.messages.append({
+    return {
         "id": len(chat.messages),
         "data": message,
         "sender_id": sender.uid,
         "attachments": attachments,
         "timestamp": time.time()
-    })
-
-    return True
+    }
 

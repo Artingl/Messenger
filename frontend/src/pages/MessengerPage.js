@@ -171,7 +171,6 @@ export default class MessengerPage extends React.Component
                 }
             }
         }, { uid: chatId, messages_offset: this.state.chatMessagesOffset }, "/messenger/chat", "GET")
-        console.log(chatId)
     }
 
     showHideMenu()
@@ -222,7 +221,7 @@ export default class MessengerPage extends React.Component
                 {!this.state.chatOpened && <div className="chat-placeholder noselect">
                     <p>Open any chat...</p>
                 </div>}
-                {this.state.chatOpened && <ChatWindow app={this.props.app} chatInfo={this.state.chatInfo} />}
+                {this.state.chatOpened && <ChatWindow messenger={this} app={this.props.app} chatInfo={this.state.chatInfo} />}
             </div>
 
         </div>);
