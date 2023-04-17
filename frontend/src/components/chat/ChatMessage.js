@@ -5,7 +5,7 @@ import './ChatMessage.css'
 export default class ChatMessage extends React.Component {
     getFormatedTime()
     {
-        return new Date(this.props.messageData.timestamp).toLocaleTimeString("en-US");
+        return new Date(this.props.messageData.timestamp).toLocaleTimeString(this.props.timeFormat);
     }
 
     render()

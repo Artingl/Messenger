@@ -4,7 +4,7 @@ from database import db
 
 
 class User(db.Base):
-    __tablename__ = 'user'
+    __tablename__ = 'users'
 
     # Unique user id
     uid = Column(Integer, primary_key=True, autoincrement=True)
@@ -32,4 +32,7 @@ class User(db.Base):
 
     # Various settings that can be changed on fly
     settings = Column(JSON, default={})
+
+    # Some internal values
+    internal = Column(JSON, default={})
 

@@ -1,12 +1,12 @@
 import React from "react";
 
 import TextField from './TextField.js';
-import ChatElement from './ChatElement.js';
+import ChatElement from '../chat/ChatElement.js';
 
-import { langGetString, langGetStringFormatted } from '../languages/Lang.js'
+import { langGetString } from '../../languages/Lang.js'
 
 import './BaseComponent.css'
-import './ChatElement.css'
+import '../chat/ChatElement.css'
 
 export default class UsersFinder extends React.Component
 {

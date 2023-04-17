@@ -42,6 +42,6 @@ class WebServer:
     def register_blueprint(self, blueprint: Blueprint):
         self.pending_blueprints.append(blueprint)
 
-    def run(self):
+    def main(self):
         self.__server.run(host=self.host, port=self.port, threaded=True)
 

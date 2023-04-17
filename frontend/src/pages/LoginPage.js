@@ -1,8 +1,8 @@
 import React from "react";
 import $ from "jquery";
 
-import TextField from '../components/TextField.js'
-import Button from '../components/Button.js'
+import TextField from '../components/ui/TextField.js'
+import Button from '../components/ui/Button.js'
 import { langGetString } from '../languages/Lang.js'
 
 import './LoginPage.css'

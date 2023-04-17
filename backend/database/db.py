@@ -21,7 +21,7 @@ def create_engine():
     logger.info("Connecting to the database...")
     
     # Connect to the database
-    db_url = f"postgresql://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}/{config.DB_DATABASE}"
+    db_url = f"postgresql://{config.database.USER}:{config.database.PASSWORD}@{config.database.HOST}/{config.database.DATABASE}"
     __db = sqlalchemy.create_engine(db_url)
     __session_factory = sessionmaker(__db)
 

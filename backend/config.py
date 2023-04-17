@@ -1,11 +1,19 @@
 
-# Server info
-SERVER_PORT = 8080
-SERVER_HOST = "0.0.0.0"
+# Web server info
+class webapi:
+    PORT = 8080
+    HOST = "0.0.0.0"
+
+
+# WebRTC server info
+class webrtc:
+    pass
+
 
 # Database info
-DB_HOST = "127.0.0.1:5432"
-DB_PASSWORD = "78329328"
-DB_USER = "web"
-DB_DATABASE = "web"
+class database:
+    HOST = "127.0.0.1:5432"
+    PASSWORD = "78329328"
+    USER = "web"
+    DATABASE = "web"
 

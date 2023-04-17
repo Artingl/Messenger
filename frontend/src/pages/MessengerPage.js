@@ -3,13 +3,15 @@ import React from "react";
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 
-import TextField from '../components/TextField.js'
-import Button from '../components/Button.js'
-import ChatElement from '../components/ChatElement.js'
-import UsersFinder from '../components/UsersFinder.js'
-import ChatWindow from '../components/ChatWindow.js'
+import TextField from '../components/ui/TextField.js'
+import Button from '../components/ui/Button.js'
+import UsersFinder from '../components/ui/UsersFinder.js'
+import ChatElement from '../components/chat/ChatElement.js'
+import ChatWindow from '../components/chat/ChatWindow.js'
 
 import { langGetString, langGetStringFormatted } from '../languages/Lang.js'
+
+import EventsHandler from '../messenger/EventsHandler.js'
 
 import './MessengerPage.css'
 
@@ -34,6 +36,9 @@ export default class MessengerPage extends React.Component
             // wait interval on API error. It will grow up to 60 seconds on every error
             lastInterval: 5,
         };
+
+        this.eventsHandler = new EventsHandler(this.props.app, this)
+        this.eventsHandler.setup()
     }
     
     componentDidMount()
@@ -99,9 +104,9 @@ export default class MessengerPage extends React.Component
     {
         this.props.app.setLoadingState(true, langGetString("loading_information"))
         
-        // hide opened chat if any
-        this.setState({ chatOpened: false, chatInfo: [], chatMessagesOffset: 0 })
-        
+        // close chat if any open
+        this.closeChat()
+       
         // request chats from the server
         this.props.app.apiCall((isSuccess, result) => {
             if (isSuccess)
@@ -141,6 +146,9 @@ export default class MessengerPage extends React.Component
 
     openChat(chatId)
     {
+        // close chat if any open
+        this.closeChat()
+
         // Get chat info
         this.props.app.apiCall((isSuccess, result) => {
             if (isSuccess)
@@ -169,6 +177,12 @@ export default class MessengerPage extends React.Component
                 }
             }
         }, { uid: chatId, messages_offset: this.state.chatMessagesOffset }, "/messenger/chat", "GET")
+    }
+
+    closeChat()
+    {
+        this.eventsHandler.popChatEvents()
+        this.setState({ chatOpened: false, chatInfo: [], chatMessagesOffset: 0 })
     }
 
     showHideMenu()

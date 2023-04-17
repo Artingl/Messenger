@@ -16,7 +16,7 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {
-            server: "http://127.0.0.1:8080/",
+            server: "http://10.254.254.225:8080",
 
             token: localStorage.getItem("token"),
             userData: {},
@@ -29,7 +29,15 @@ export default class App extends React.Component {
             popupChildren: undefined,
         };
 
-        loadLanguage("en");
+        this.language = "ru"
+        this.longpoll = {
+            lastId: 0,
+            pool: {}
+        }
+
+        this.keyUpHandlers = []
+
+        loadLanguage(this.language);
     }
 
     keyUpHandler(event) 
@@ -38,6 +46,10 @@ export default class App extends React.Component {
         {
             this.closePopupDialog()
         }
+
+        // send key events to all subscribers
+        for (let i in this.keyUpHandlers)
+            this.keyUpHandlers[i](event)
     }
 
     componentDidMount()
@@ -52,6 +64,12 @@ export default class App extends React.Component {
     {
         // remove events
         $(document).off("keyup")
+        this.keyUpHandlers = []
+    }
+
+    subscribeKeyboardEvent(callback)
+    {
+        this.keyUpHandlers.push(callback)
     }
 
     authenticate()
@@ -87,15 +105,80 @@ export default class App extends React.Component {
         window.location.reload()
     }
 
-    async apiCall(callback, data, apiMethod, httpMethod, timeout)
+    getLanguage()
     {
-        // todo: check for ERR_CONNECTION_REFUSED
+        return this.language
+    }
+
+    getRegion()
+    {
+        return this.language + "-US"
+    }
+
+    cancelLongpoll(id)
+    {
+        if (this.longpoll.pool[id] === undefined)
+            return
+
+        // abort ajax
+        this.longpoll.pool[id].request.abort()
+
+        delete this.longpoll.pool[id]
+    }
+
+    apiLongpoll(callback, data, apiMethod, version)
+    {
+        const id = this.longpoll.lastId++
+        
+        if (version === undefined)
+            version = "v1"
+
+        data['token'] = this.state.token
+        
+        // set recent_id if it was not set
+        if (data['recent_id'] === undefined)
+            data['recent_id'] = -1
+
+        this.longpoll.pool[id] = {
+            state: true,
+            request: $.ajax({
+                url: this.state.server + "/" + version + apiMethod,
+                type: "GET",
+                data: data,
+                contentType: "application/json",
+                dataType: "json",
+                timeout: 60000,
+            }).done((res) => {
+                data['recent_id'] = res.data.poll_result[2]
+                callback(res.data.poll_result[0], res.data.poll_result[1])
+
+                // call longpoll again if current event is not canceled
+                if (this.longpoll.pool[id] !== undefined)
+                {
+                    this.apiLongpoll(callback, data, apiMethod, version)
+                }
+            }).fail((jqXHR, exception) => {
+                // call longpoll again if current event is not canceled
+                if (exception === "timeout" && this.longpoll.pool[id] !== undefined)
+                {
+                    this.apiLongpoll(callback, data, apiMethod, version)
+                }
+            })
+        }
+
+        return id
+    }
+
+    async apiCall(callback, data, apiMethod, httpMethod, version)
+    {
+        if (version === undefined)
+            version = "v1"
+
         data['token'] = this.state.token
 
         // todo: remove double slashes in url
         $.ajax({
-            timeout: timeout === undefined ? 5000 : timeout,
-            url: this.state.server + "/v1" + apiMethod,
+            url: this.state.server + "/" + version + apiMethod,
             type: httpMethod,
             data: (httpMethod === "GET" ? data : JSON.stringify(data)),
             contentType: "application/json",

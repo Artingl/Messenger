@@ -118,6 +118,24 @@ class MessengerChat(api.ApiBase):
                 result.data['messages'] = chat.messages[messages_offset:messages_offset + 64]
             elif request.method == "POST":
                 if request.fields['method'] == "typing":
+                    if "last_typing_event" not in user.internal:
+                        user.internal["last_typing_event"] = 0
+
+                    if user.internal["last_typing_event"] + 1.9 > time.time():
+                        # User sent the event too quick since the last one
+                        result.status_code = api.ApiResponse.Codes.BAD_REQUEST
+                        result.code = 4
+                        result.message = "Wait until next event."
+                        return result
+                    
+                    # Update user's timer
+                    user.internal["last_typing_event"] = time.time()
+                    
+                    flag_modified(user, "internal")
+                    print(user.internal["last_typing_event"])
+                    session.merge(user)
+                    session.commit()
+
                     # Send event to polling hander
                     # marker: chatevent_{chat_id}_typing
                     request.webserver.polling.send(f"chatevent_{chat.uid}_typing", 2000, { "uid": user.uid, "nickname": user.nickname })
