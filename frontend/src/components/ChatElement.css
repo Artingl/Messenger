@@ -4,7 +4,7 @@
     width: calc(100% - 20px);
     height: 70px;
 
-    background-color: #a2acac00;
+    background-color: transparent;
     
     border-radius: 8px;
     
@@ -17,14 +17,14 @@
 
 .chat-element:hover {
     box-shadow: rgba(99, 99, 99, 0.2) 0px 2px 8px 0px;
-    background-color: #a2acacd1;
+    background-color: var(--secondary-color);
 }
 
 .chat-element img {
     width: 48px;
     height: 48px;
 
-    border: 1px solid #ccc;
+    border: 1px solid var(--secondary-color);
     border-radius: 48px;
     margin: 11px;
 }
@@ -42,7 +42,8 @@
     align-items: center;
     justify-content: center;
 
-    border: 1px solid #ccc;
+    color: #444;
+    border: 1px solid var(--secondary-color);
     border-radius: 48px;
     margin: 11px;
 
@@ -59,6 +60,8 @@
 
     font-weight: 700;
     font-size: 0.9em;
+
+    color: var(--font-color);
 }
 
 .chat-element #description {
@@ -72,7 +75,7 @@
 
     font-weight: 500;
     font-size: 0.8em;
-    color: #666;
+    color: var(--secondary-font-color);
 
     display: -webkit-box;
     -webkit-line-clamp: 2;

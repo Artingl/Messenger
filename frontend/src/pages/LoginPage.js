@@ -3,6 +3,7 @@ import $ from "jquery";
 
 import TextField from '../components/TextField.js'
 import Button from '../components/Button.js'
+import { langGetString } from '../languages/Lang.js'
 
 import './LoginPage.css'
 
@@ -32,9 +33,9 @@ export default class LoginPage extends React.Component
         // check fields
         // todo: improve checking
         $("#hint").css("opacity", 0)
-        if (email.length === 0 || password.length === 0)
+        if (email.length === 0 || password.length < 8)
         {
-            $("#hint").html("Type full email and password")
+            $("#hint").html(langGetString("malformed_email_password"))
             $("#hint").css("opacity", 1)
         }
 
@@ -47,22 +48,22 @@ export default class LoginPage extends React.Component
                     break
 
                 case -1: // internal error
-                    $("#hint").html("Internal server error")
+                    $("#hint").html(langGetString("internal_error"))
                     $("#hint").css("opacity", 1)
                     break
 
                 case 1: // invalid user
-                    $("#hint").html("Incorrect email or password")
+                    $("#hint").html(langGetString("incorrect_email_password"))
                     $("#hint").css("opacity", 1)
                     break
 
                 case 105: // unable to connect
-                    $("#hint").html("Unable to connect to the server!")
+                    $("#hint").html(langGetString("unable_connect"))
                     $("#hint").css("opacity", 1)
                     break
 
                 default: // unknown error
-                    $("#hint").html("Unknown error")
+                    $("#hint").html(langGetString("unknown_error"))
                     $("#hint").css("opacity", 1)
                     break
             }
@@ -78,21 +79,21 @@ export default class LoginPage extends React.Component
 
             <form className="login-form">
                 {/* Form title */}
-                <div id="title">Log in to your account</div>
+                <div id="title">{langGetString("login_title")}</div>
 
                 {/* Status hint (shows errors, if any occurred) */}
                 <div id="hint" style={{ opacity: 0 }}>...</div>
 
                 {/* Email field */}
                 <TextField
-                    hint="Email"
+                    hint={langGetString("email")}
                     setValue={(value) => this.setState({ email: value }) }
                     className="login-email"
                 />
                 
                 {/* Password field */}
                 <TextField
-                    hint="Password"
+                    hint={langGetString("password")}
                     setValue={(value) => this.setState({ password: value }) }
                     isPassword={true}
                     className="login-password"
@@ -101,7 +102,7 @@ export default class LoginPage extends React.Component
                 {/* Log in button */}
                 <Button
                     onClick={() => this.loginEvent()}
-                    text="Log in"
+                    text={langGetString("login_button")}
                     className="login-button"
                 />
             </form>

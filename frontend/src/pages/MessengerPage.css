@@ -17,8 +17,7 @@
     position: absolute;
     z-index: 2;
 
-    background-color: #e7eaebb3;
-    border-right: 1px solid #ccc;
+    border-right: 1px solid var(--secondary-color);
 
     backdrop-filter: blur(16px);
 }
@@ -56,16 +55,16 @@
 }
 
 .messenger-page .chats-list {
-    background-color: #e7eaeb;
-    border-right: 1px solid #ccc;
+    background-color: var(--secondary-bg-color);
+    border-right: 1px solid var(--secondary-color);
     z-index: 1;
 
     overflow-x: hidden;
 }
 
 .messenger-page .chats-list .search-box {
-    background-color: #efefefb0;
-    border-bottom: 1px solid #ccc;
+    background-color: var(--secondary-bg-color);
+    border-bottom: 1px solid var(--secondary-color);
 
     width: 100%;
     height: 70px;
@@ -134,7 +133,7 @@
 }
 
 .messenger-page .chat {
-    background-color: #fafafad6;
+    background-color: var(--bg-color);
     position: absolute;
 }
 

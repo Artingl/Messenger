@@ -3,6 +3,7 @@ import $ from "jquery";
 
 import LoginPage from './pages/LoginPage.js'
 import MessengerPage from './pages/MessengerPage.js'
+import { loadLanguage } from './languages/Lang.js'
 
 import PopupDialog from './components/PopupDialog.js'
 
@@ -27,6 +28,8 @@ export default class App extends React.Component {
             popupState: 0,  // 0 - closed, 1 - opening, 2 - opened and waiting for action, 3 - closing
             popupChildren: undefined,
         };
+
+        loadLanguage("en");
     }
 
     keyUpHandler(event) 

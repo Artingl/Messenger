@@ -1,15 +1,15 @@
 import React from "react";
-import $ from "jquery";
 
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
-import AddIcon from '@mui/icons-material/Add';
 
 import TextField from '../components/TextField.js'
 import Button from '../components/Button.js'
 import ChatElement from '../components/ChatElement.js'
 import UsersFinder from '../components/UsersFinder.js'
 import ChatWindow from '../components/ChatWindow.js'
+
+import { langGetString, langGetStringFormatted } from '../languages/Lang.js'
 
 import './MessengerPage.css'
 
@@ -64,7 +64,7 @@ export default class MessengerPage extends React.Component
         else {
             // add placehoolder that tells the user no chats available
             this.setState({ chats: [
-                <li className="chat-placeholder noselect"><p>No chats available. Begin a new conversation with <div onClick={() => this.createChat()} id="create-chat">somebody</div>.</p></li>
+                <li className="chat-placeholder noselect"><p>{langGetString("no_chats_available")} <div onClick={() => this.createChat()} id="create-chat">{langGetString("somebody")}</div>.</p></li>
             ]})
         }
         
@@ -80,26 +80,24 @@ export default class MessengerPage extends React.Component
         </>)
     }
 
-    displayErrorTimeout(message)
+    displayErrorTimeout(message, callback)
     {
         const maxI = this.state.lastInterval
         for (let i = 0; i < this.state.lastInterval; i++)
         {
             setTimeout(() => {
-                this.props.app.setLoadingState(true, message + ". Retrying in " + (maxI - i) + " seconds...")
+                this.props.app.setLoadingState(true, message + ". " + langGetStringFormatted("timer_retrying", { time: maxI - i }))
             }, 1000 * i)
         }
 
-        setTimeout(() => {
-            this.requestChats()
-        }, 1000 * this.state.lastInterval)
+        setTimeout(callback, 1000 * this.state.lastInterval)
 
         this.setState({ lastInterval: (this.state.lastInterval < 60 ? this.state.lastInterval + 5 : 60) })
     }
 
     requestChats()
     {
-        this.props.app.setLoadingState(true, "Loading chats...")
+        this.props.app.setLoadingState(true, langGetString("loading_information"))
         
         // hide opened chat if any
         this.setState({ chatOpened: false, chatInfo: [], chatMessagesOffset: 0 })
@@ -116,7 +114,7 @@ export default class MessengerPage extends React.Component
                     this.updateChats([])
                 }
                 else { // unable get result
-                    this.displayErrorTimeout(`Unable to get chats list (Error code: ${result.code})`)
+                    this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chats", {errorCode: result.code}), () => this.requestChats())
                 }
             }
         }, { }, "/messenger/chats", "GET")
@@ -136,7 +134,7 @@ export default class MessengerPage extends React.Component
             }
             else {
                 // else statement would execute only when an internal server error occurred
-                this.displayErrorTimeout(`Unable to send request to the server (Error code: ${result.code})`)
+                this.displayErrorTimeout(langGetStringFormatted("error_unable_send_request", {errorCode: result.code}), () => this.requestChats())
             }
         }, { members: [userData.uid], chatTitle: `${userData.nickname}, ${this.props.app.state.userData.nickname}` }, "/messenger/chats", "POST")
     }
@@ -167,7 +165,7 @@ export default class MessengerPage extends React.Component
                 }
                 else
                 { // server error
-                    this.displayErrorTimeout(`Unable to get chat info (Error code: ${result.code})`)
+                    this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.requestChats())
                 }
             }
         }, { uid: chatId, messages_offset: this.state.chatMessagesOffset }, "/messenger/chat", "GET")
@@ -207,9 +205,9 @@ export default class MessengerPage extends React.Component
                     />
                     
                     <TextField
-                        style={{ width: "calc(80% - 30px)", height: 40, marginRight: 20 }}
+                        style={{ width: "calc(80% - 30px)", height: 38, marginRight: 20, marginTop: -2 }}
                         setValue={(value) => this.setState({ serachValue: value })}
-                        hint="Search"
+                        hint={langGetString("search")}
                     />
                 </div>
 
@@ -219,7 +217,7 @@ export default class MessengerPage extends React.Component
             {/* Current opened chat */}
             <div className="chat" style={this.state.chatOpened ? { zIndex: 2 } : {}}>
                 {!this.state.chatOpened && <div className="chat-placeholder noselect">
-                    <p>Open any chat...</p>
+                    <p>{langGetString("open_chat")}</p>
                 </div>}
                 {this.state.chatOpened && <ChatWindow messenger={this} app={this.props.app} chatInfo={this.state.chatInfo} />}
             </div>

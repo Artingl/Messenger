@@ -5,6 +5,8 @@ import ChatMessage from './ChatMessage.js'
 import TextField from "./TextField.js"
 import Button from "./Button.js"
 
+import { langGetString, langGetStringFormatted } from '../languages/Lang.js'
+
 import './ChatWindow.css'
 
 export default class ChatWindow extends React.Component {
@@ -20,9 +22,8 @@ export default class ChatWindow extends React.Component {
             typingTimer: undefined,
 
             pollEvents: {
-                events: [],
-                timestamp: {
-                    // how old should be the event
+                events: {},
+                recentIds: {
                     typing: 0,
                     newMessage: 0,
                 }
@@ -31,26 +32,22 @@ export default class ChatWindow extends React.Component {
 
         this.loadMessages()
         
-        // set up poll events interval
+        // set up events poll interval
         this.setupPolling()
     }
 
-    reinstallPollInterval(id, callback)
+    reinstallPollInterval(name, callback)
     {
+        // clear old interval
+        if (this.state.pollEvents.events[name] !== undefined)
+            clearInterval(this.state.pollEvents.events[name])
+
         let events = this.state.pollEvents.events
-        // clear aold interval
-        if (events[id] !== undefined)
-            clearInterval(events[id])
-
-
-        // set up new interval
-        events[id] = setInterval(() => {
-            callback()
-        }, 60000)
+        events[name] = setInterval(callback, 60000)
 
         this.setState({ pollEvents: {
             events: events,
-            timestamp: this.state.pollEvents.timestamp,
+            recentIds: this.state.pollEvents.recentIds,
         } })
 
         callback()
@@ -67,60 +64,69 @@ export default class ChatWindow extends React.Component {
         
         // set up new intervals
         this.setState({ pollEvents: {
-                events: [
-                    setInterval(() => {
+                events: {
+                    typing: setInterval(() => {
                         this.pollTypingEvent()
                     }, 60000),
-                    setInterval(() => {
+                    newMessage: setInterval(() => {
                         this.pollNewMessageEvent()
                     }, 60000),
-                ],
-                timestamp: this.state.pollEvents.timestamp,
+                },
+                recentIds: this.state.pollEvents.recentIds,
         } })
 
         this.pollTypingEvent()
         this.pollNewMessageEvent()
     }
 
-    refreshPollTimestamp(name)
+    refreshPollId(name, id)
     {
+        let recentIds = this.state.pollEvents.recentIds
+        recentIds[name] = id
+
         this.setState({ pollEvents: {
             events: this.state.pollEvents.events,
-            timestamp: {
-                typing: new Date().getTime()
-            }
+            recentIds: recentIds
         } })
     }
 
     pollTypingEvent()
     {
         this.props.app.apiCall((isSuccess, result) => {
-            this.refreshPollTimestamp("typing")
-
             if (isSuccess)
-            {
-                // somebody is typing...
-                if (result.data.poll_result[0].uid !== this.props.app.state.userData.uid)
-                { // check that this event does not tell about ourself                    
-                    // remove other timeout, if any running
-                    if (this.state.typingTimer !== undefined)
-                        clearTimeout(this.state.typingTimer)
+            { 
+                // Check if the poll result is valid
+                if (result.data.poll_result[0])
+                {
+                    this.refreshPollId("typing", result.data.poll_result[2])
 
-                    this.setState({
-                        typingMessage: `${result.data.poll_result[0].nickname} is typing...`,
-                        
-                        // set timeout, so the typing message will be cleared if no new events produces
-                        typingTimer: setTimeout(() => {
-                            this.setState({ typingMessage: "", typingTimer: undefined })
-                        }, 2500)
-                    })
+                    // somebody is typing...
+                    if (result.data.poll_result[1].uid !== this.props.app.state.userData.uid)
+                    { // check that this event does not tell about ourself                    
+                        // remove other timeout, if any running
+                        if (this.state.typingTimer !== undefined)
+                            clearTimeout(this.state.typingTimer)
+
+                        this.setState({
+                            typingMessage: langGetStringFormatted("somebody_typing", { nickname: result.data.poll_result[1].nickname }),
+                            
+                            // set timeout, so the typing message will be cleared if no new events produces
+                            typingTimer: setTimeout(() => {
+                                this.setState({ typingMessage: "", typingTimer: undefined })
+                            }, 2500)
+                        })
+                    }
                 }
-            }
 
-            // reinstall interval (typing interval has id 0)
-            this.reinstallPollInterval(0, () => this.pollTypingEvent())
+                // reinstall interval
+                this.reinstallPollInterval("typing", () => this.pollTypingEvent())
+            }
+            else {
+                // close the chat on any error
+                this.props.messenger.requestChats()
+            }
         }, { 
-            recent_timestamp: this.state.pollEvents.timestamp.typing,
+            recent_id: this.state.pollEvents.recentIds.typing,
             method: "typing",
             uid: this.props.chatInfo.uid
         }, "/messenger/chat/poll", "GET", 60000)
@@ -130,24 +136,31 @@ export default class ChatWindow extends React.Component {
     pollNewMessageEvent()
     {
         this.props.app.apiCall((isSuccess, result) => {
-            this.refreshPollTimestamp("new_message")
-
             if (isSuccess)
             {
-                // got new message
-                let message = result.data.poll_result[0].message
-                let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
-                this.addMessage(message, side)
-            }
+                // Check if the poll result is valid
+                if (result.data.poll_result[0])
+                {
+                    this.refreshPollId("newMessage", result.data.poll_result[2])
 
-            // reinstall interval (new message interval has id 1)
-            this.reinstallPollInterval(1, () => this.pollNewMessageEvent())
+                    // got new message
+                    let message = result.data.poll_result[1].message
+                    let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
+                    this.addMessage(message, side)
+                }
+
+                // reinstall interval
+                this.reinstallPollInterval("newMessage", () => this.pollNewMessageEvent())
+            }
+            else {
+                // close the chat on any error
+                this.props.messenger.requestChats()
+            }
         }, { 
-            recent_timestamp: this.state.pollEvents.timestamp.typing,
+            recent_id: this.state.pollEvents.recentIds.newMessage,
             method: "new_message",
             uid: this.props.chatInfo.uid
         }, "/messenger/chat/poll", "GET", 60000)
-
     }
 
     loadMessages()
@@ -183,8 +196,12 @@ export default class ChatWindow extends React.Component {
 
         if (this.state.timeSinceLastActivity + 2000 < now)
         {
-            // ignore the result because we don't really care about it
-            this.props.app.apiCall((isSuccess, result) => { }, { uid: this.props.chatInfo.uid, method: "typing" }, "/messenger/chat", "POST")
+            this.props.app.apiCall((isSuccess, result) => {
+                if (!isSuccess)
+                { // close the chat on any error
+                    this.props.messenger.requestChats()
+                }
+            }, { uid: this.props.chatInfo.uid, method: "typing" }, "/messenger/chat", "POST")
             this.setState({ timeSinceLastActivity: now })
         }
     }
@@ -218,7 +235,7 @@ export default class ChatWindow extends React.Component {
                 }
                 else
                 { // server error
-                    this.displayErrorTimeout(`Unable to get chat info (Error code: ${result.code})`)
+                    this.props.messenger.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.requestChats())
                 }
             }
         }, {
@@ -245,7 +262,7 @@ export default class ChatWindow extends React.Component {
             <div id="chat-message-input">
                 <p id="typing-event">{this.state.typingMessage}</p>
 
-                <TextField hint="Type a message..." setValue={(msg) => this.typingMessage(msg)} />
+                <TextField hint={langGetString("type_message")} setValue={(msg) => this.typingMessage(msg)} />
                 <Button icon={<SendIcon />} onClick={() => this.sendMessage()} />
             </div>
         </div>

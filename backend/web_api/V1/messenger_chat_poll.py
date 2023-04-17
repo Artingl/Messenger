@@ -17,7 +17,7 @@ class MessengerChatPoll(api.ApiBase):
         )
 
     def validate_request(self, request: api.ApiRequest) -> bool:
-        return "token" in request.fields and "uid" in request.fields and "method" in request.fields and "recent_timestamp" in request.fields
+        return "token" in request.fields and "uid" in request.fields and "method" in request.fields and "recent_id" in request.fields
 
     def request(self, request: api.ApiRequest) -> api.ApiResponse:
         result = api.ApiResponse(
@@ -57,8 +57,10 @@ class MessengerChatPoll(api.ApiBase):
             # Update chat settings
             chat.settings = chat_utils.update_settings(chat)
             
+        # todo: limit amount of longpoll calls for every user
+
         result.data["poll_result"] = \
-            request.webserver.polling.poll(f"chatevent_{chat.uid}_{request.fields['method']}", int(request.fields['recent_timestamp']))
+            request.webserver.polling.poll(f"chatevent_{chat.uid}_{request.fields['method']}", int(request.fields['recent_id']))
 
         return result
 

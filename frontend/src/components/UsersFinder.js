@@ -3,6 +3,8 @@ import React from "react";
 import TextField from './TextField.js';
 import ChatElement from './ChatElement.js';
 
+import { langGetString, langGetStringFormatted } from '../languages/Lang.js'
+
 import './BaseComponent.css'
 import './ChatElement.css'
 
@@ -101,7 +103,7 @@ export default class UsersFinder extends React.Component
         return <div style={this.props.style} className={"base-component-div " + (this.props.className !== undefined ? this.props.className : "")}>
             <div id="users-list">
                 <div id="user-add">
-                    <TextField hint="User ID or Nickname" setValue={(value) => this.setUserInfo(value)} />
+                    <TextField hint={langGetString("user_id_nickname")} setValue={(value) => this.setUserInfo(value)} />
                 </div>
 
                 <ul>{this.state.usersList}</ul>
