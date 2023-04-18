@@ -15,6 +15,9 @@ class Chats(db.Base):
     # Chat messages
     messages = Column(ARRAY(JSON), default={})
 
+    # A list that contains info what messages some members might not have read
+    unread_messages = Column(ARRAY(JSON), default={})
+
     # Timestamp in seconds since the chat was created
     register_timestamp = Column(Integer, nullable=False)
 

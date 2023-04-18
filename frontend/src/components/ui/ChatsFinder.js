@@ -1,14 +1,14 @@
 import React from "react";
 
-import TextField from './TextField.js';
 import ChatElement from '../chat/ChatElement.js';
 
 import { langGetString } from '../../languages/Lang.js'
 
 import './BaseComponent.css'
+import './ChatsFinder.css'
 import '../chat/ChatElement.css'
 
-export default class UsersFinder extends React.Component
+export default class ChatsFinder extends React.Component
 {
     constructor(props)
     {
@@ -16,9 +16,15 @@ export default class UsersFinder extends React.Component
 
         this.state = {
             userInfo: "",
-            usersList: [],
+            usersList: [
+                <p id="err-msg" className="noselect">{langGetString("type_id_nickname")}</p>
+            ],
+
             timeoutId: undefined,
         };
+
+        this.props.messenger.eventsHandler.subscribeSearchMessage(
+            (msg) => this.setUserInfo(msg))
     }
 
     setUserInfo(info)
@@ -37,7 +43,9 @@ export default class UsersFinder extends React.Component
     {
         if (this.state.userInfo === undefined || this.state.userInfo.length <= 1)
         {
-            this.setState({ usersList: [] })
+            this.setState({ usersList: [
+                <p id="err-msg" className="noselect">{langGetString("type_id_nickname")}</p>
+            ] })
             return;
         }
         
@@ -60,7 +68,6 @@ export default class UsersFinder extends React.Component
                             description={user.login}
                             chatId={user.uid}
                             onClick={() => this.createDialog(user)}
-                            style={{ width: "100%" }}
                         />)
                     }
                     else { 
@@ -70,7 +77,6 @@ export default class UsersFinder extends React.Component
                             description={user.login}
                             chatId={user.uid}
                             onClick={() => this.createDialog(user)}
-                            style={{ width: "100%" }}
                         />)
                     }
                 }
@@ -78,13 +84,11 @@ export default class UsersFinder extends React.Component
             else {
                 if (result.code === 2)
                 { // no users were found
-                    resultArray.push(<p id="err-msg" className="noselect">No users were found</p>)
+                    resultArray.push(<p id="err-msg" className="noselect">{langGetString("noone_found")}</p>)
                 }
                 else if (result.code === 1)
                 { // unable to authenticate using token
-                    resultArray.push(<p id="err-msg" className="noselect">Unable to authenticate! Try to reload the page.</p>)
-                }
-                else {
+                    resultArray.push(<p id="err-msg" className="noselect">{langGetString("unable_authenticate")}</p>)
                 }
             }
 
@@ -95,19 +99,13 @@ export default class UsersFinder extends React.Component
     createDialog(userData)
     {
         this.props.onUserClick(userData)
-        this.props.app.closePopupDialog()
+        this.props.messenger.leftMenuAction()
     }
 
     render()
     {
         return <div style={this.props.style} className={"base-component-div " + (this.props.className !== undefined ? this.props.className : "")}>
-            <div id="users-list">
-                <div id="user-add">
-                    <TextField hint={langGetString("user_id_nickname")} setValue={(value) => this.setUserInfo(value)} />
-                </div>
-
-                <ul>{this.state.usersList}</ul>
-            </div>
+            <ul>{this.state.usersList}</ul>
         </div>
     }
 

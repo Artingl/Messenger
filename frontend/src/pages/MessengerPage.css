@@ -13,7 +13,7 @@
     z-index: -1;
 }
 
-.messenger-page .left-bar {
+.messenger-page .menu-bar {
     position: absolute;
     z-index: 2;
 
@@ -24,7 +24,7 @@
 
 @media (max-width: 660px) {
     /* mobile */
-    .messenger-page .chats-list, .messenger-page .left-bar {
+    .messenger-page .left-list, .messenger-page .menu-bar {
         width: 100%;
         max-width: 100%;
         height: 100%;
@@ -40,7 +40,7 @@
 
 @media (min-width: 660px) {
     /* desktop */
-    .messenger-page .chats-list, .messenger-page .left-bar {
+    .messenger-page .left-list, .messenger-page .menu-bar {
         width: 400px;
         max-width: 400px;
         height: 100%;
@@ -54,7 +54,7 @@
     }
 }
 
-.messenger-page .chats-list {
+.messenger-page .left-list {
     background-color: var(--secondary-bg-color);
     border-right: 1px solid var(--secondary-color);
     z-index: 1;
@@ -62,7 +62,7 @@
     overflow-x: hidden;
 }
 
-.messenger-page .chats-list .search-box {
+.messenger-page .left-list .search-box {
     background-color: var(--secondary-bg-color);
     border-bottom: 1px solid var(--secondary-color);
 
@@ -75,11 +75,16 @@
     justify-content: space-around;
 }
 
-.messenger-page .chats-list ul {
-    width: calc(100% - 8px);
-    height: calc(100% - 101px);
-    max-height: calc(100% - 101px);
+.messenger-page .left-list .chats-list, .messenger-page .left-list .search-list {
+    width: 100%;
+    height: calc(100% - 71px);
+
     overflow-y: hidden;
+}
+
+.messenger-page .left-list .chats-list ul {
+    width: 100%;
+    height: fit-content;
     
     list-style-type: none;
 
@@ -91,6 +96,10 @@
     padding-bottom: 20px;    
 
 	transition: transform 0.3s cubic-bezier(0.85, 0, 0.15, 1);
+}
+
+.messenger-page .left-list .chats-list:hover, .messenger-page .left-list .search-list:hover{
+    overflow-y: auto;
 }
 
 .messenger-page .chat-placeholder {
@@ -106,8 +115,8 @@
     justify-content: center;
     text-align: center;
 
-    width: calc(100% - 20px);
-    height: 100%;
+    width: 100%;
+    height: calc(100vh - 125px);
 }
 
 .messenger-page .chat-placeholder #create-chat {
@@ -125,11 +134,6 @@
     padding-right: 4px;
     background-color: #666;
     border-radius: 4px;
-}
-
-.messenger-page .chats-list ul:hover {
-    overflow-y: scroll;
-    width: 100%;
 }
 
 .messenger-page .chat {

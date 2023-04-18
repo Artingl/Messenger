@@ -111,11 +111,15 @@ class MessengerChat(api.ApiBase):
                 # Set other chat info and return
                 messages_offset = int(request.fields['messages_offset'])
 
+                # Messages count
+                ln = len(chat.messages)
+
                 result.data['uid'] = chat.uid
                 result.data['chat_title'] = chat.chat_title
                 result.data['register_timestamp'] = chat.register_timestamp
                 result.data['settings'] = chat_utils.update_settings(chat)
-                result.data['messages'] = chat.messages[messages_offset:messages_offset + 64]
+                result.data['messages'] = chat.messages[ln - messages_offset - 64:ln - messages_offset]
+                result.data['total_messages'] = ln
             elif request.method == "POST":
                 if request.fields['method'] == "typing":
                     if "last_typing_event" not in user.internal:
@@ -158,6 +162,9 @@ class MessengerChat(api.ApiBase):
                     # Send new message event
                     # marker: chatevent_{chat_id}_new_message
                     request.webserver.polling.send(f"chatevent_{chat.uid}_new_message", 3000, { "message": chat.messages[-1] })
+
+                    # Update typing event because a message was sent
+                    request.webserver.polling.send(f"chatevent_{chat.uid}_typing", 2000, { "uid": -1, "nickname": "" })
 
         return result
 

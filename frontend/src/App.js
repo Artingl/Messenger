@@ -16,7 +16,7 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {
-            server: "http://10.254.254.225:8080",
+            server: "http://192.168.1.8:8080",
 
             token: localStorage.getItem("token"),
             userData: {},
@@ -163,10 +163,17 @@ export default class App extends React.Component {
                 {
                     this.apiLongpoll(callback, data, apiMethod, version)
                 }
+                else {
+                    this.reportServerConnectionError()
+                }
             })
         }
 
         return id
+    }
+
+    reportServerConnectionError()
+    {
     }
 
     async apiCall(callback, data, apiMethod, httpMethod, version)

@@ -5,7 +5,7 @@ import CloseIcon from '@mui/icons-material/Close';
 
 import TextField from '../components/ui/TextField.js'
 import Button from '../components/ui/Button.js'
-import UsersFinder from '../components/ui/UsersFinder.js'
+import ChatsFinder from '../components/ui/ChatsFinder.js'
 import ChatElement from '../components/chat/ChatElement.js'
 import ChatWindow from '../components/chat/ChatWindow.js'
 
@@ -26,9 +26,10 @@ export default class MessengerPage extends React.Component
             isMenuShown: false,
             searchValue: "",
 
+            inSearchMode: false,
+
             chats: [],
 
-            chatMessagesOffset: 0,
             chatOpened: false,
             chatInfo: [
             ],
@@ -40,10 +41,32 @@ export default class MessengerPage extends React.Component
         this.eventsHandler = new EventsHandler(this.props.app, this)
         this.eventsHandler.setup()
     }
+
+    keyHandler(event)
+    {
+        if (event.code === "Escape")
+        {
+            // hide search, if it is opened and escape is pressed
+            if (this.state.inSearchMode)
+            {
+                this.leftMenuAction()
+            }
+            // hide chat window if it is opened
+            else 
+            {
+                if (this.state.chatOpened)
+                {
+                    this.closeChat()
+                }
+            }
+        }
+
+    }
     
     componentDidMount()
     {
         this.requestChats()
+        this.props.app.subscribeKeyboardEvent((e) => this.keyHandler(e))
     }
 
     updateChats(chats)
@@ -67,22 +90,13 @@ export default class MessengerPage extends React.Component
         if (chatsPool.length > 0)
             this.setState({ chats: chatsPool })
         else {
-            // add placehoolder that tells the user no chats available
+            // add placeholder that tells the user no chats available
             this.setState({ chats: [
-                <li className="chat-placeholder noselect"><p>{langGetString("no_chats_available")} <div onClick={() => this.createChat()} id="create-chat">{langGetString("somebody")}</div>.</p></li>
+                <li className="chat-placeholder noselect"><p>{langGetString("no_chats_available")} <div onClick={() => this.beginSearching()} id="create-chat">{langGetString("somebody")}</div>.</p></li>
             ]})
         }
         
         this.props.app.setLoadingState(false)
-    }
-
-    createChat()
-    {
-        this.props.app.setPopupDialog(<>
-            <form className="create-chat-dialog">
-                <UsersFinder app={this.props.app} onUserClick={(userData) => this.requestChatCreate(userData)} />
-            </form>
-        </>)
     }
 
     displayErrorTimeout(message, callback)
@@ -176,18 +190,46 @@ export default class MessengerPage extends React.Component
                     this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.requestChats())
                 }
             }
-        }, { uid: chatId, messages_offset: this.state.chatMessagesOffset }, "/messenger/chat", "GET")
+        }, { uid: chatId, messages_offset: 0 }, "/messenger/chat", "GET")
     }
 
     closeChat()
     {
         this.eventsHandler.popChatEvents()
-        this.setState({ chatOpened: false, chatInfo: [], chatMessagesOffset: 0 })
+        this.setState({ chatOpened: false, chatInfo: [] })
     }
 
-    showHideMenu()
+    leftMenuAction()
     {
-        this.setState({ isMenuShown: !this.state.isMenuShown })
+        // check if the user currently in search mode, and if it is, then hide search list
+        if (this.state.inSearchMode)
+        {
+            // remove search event, because ChatsFinder component set it up earlier
+            this.eventsHandler.unsubscribeSearchMessage()
+
+            // hide search list
+            this.setState({ inSearchMode: false }, () => {
+                this.searchField.ref.value = ""
+
+                // remove focus from search field
+                this.searchField.ref.blur()
+            })
+        }
+        else this.setState({ isMenuShown: !this.state.isMenuShown })
+    }
+
+    beginSearching()
+    { // when search box is clicked or from some other events
+        this.setState({ inSearchMode: true }, () => {
+            // focus search box
+            this.searchField.ref.focus()
+        })
+    }
+
+    updateSearchBox(value)
+    {
+        this.setState({ searchValue: value })
+        this.eventsHandler.pollSearchMessage(value)
     }
 
     render()
@@ -197,40 +239,49 @@ export default class MessengerPage extends React.Component
             
             {/* Menu panel. Hidden until its button is clicked */}
             <div
-                className="left-bar"
+                className="menu-bar"
                 style={{
                     transform: "translateX(" + (this.state.isMenuShown ? "0px" : "-100%") + ")"
                 }}>
                 
                 <Button
-                    onClick={() => this.showHideMenu()}
+                    onClick={() => this.leftMenuAction()}
                     style={{ width: 40, height: 40, margin: 10  }}
                     icon={<CloseIcon />}
                 />
             </div>
 
             {/* List of chats. This div also contains search box with menu button */}
-            <div className="chats-list">
+            <div className="left-list">
                 <div className="search-box" style={{ transform: "translateX(" + (!this.state.isMenuShown ? "0px" : "100%") + ")" }}>
                     <Button
-                        onClick={() => this.showHideMenu()}
+                        onClick={() => this.leftMenuAction()}
                         style={{ width: 40, height: 40 }}
-                        icon={<MenuIcon />}
+                        icon={this.state.inSearchMode ? <CloseIcon /> : <MenuIcon />}
                     />
                     
                     <TextField
                         style={{ width: "calc(80% - 30px)", height: 38, marginRight: 20, marginTop: -2 }}
-                        setValue={(value) => this.setState({ serachValue: value })}
+                        setValue={(value) => this.updateSearchBox(value)}
+                        onClick={(evt) => this.beginSearching()}
                         hint={langGetString("search")}
+                        elemClassName="search-field"
+                        ref={(v) => this.searchField = v}
                     />
                 </div>
 
-                <ul style={{ transform: "translateX(" + (!this.state.isMenuShown ? "0px" : "100%") + ")" }}>{this.state.chats}</ul>
+                {this.state.inSearchMode && <div className="search-list">
+                    <ChatsFinder messenger={this} app={this.props.app} onUserClick={(userData) => this.requestChatCreate(userData)} />
+                </div>}
+
+                {!this.state.inSearchMode && <div className="chats-list" style={{ transform: "translateX(" + (!this.state.isMenuShown ? "0px" : "100%") + ")" }}>
+                    <ul>{this.state.chats}</ul>
+                </div>}
             </div>
 
             {/* Current opened chat */}
             <div className="chat" style={this.state.chatOpened ? { zIndex: 2 } : {}}>
-                {!this.state.chatOpened && <div className="chat-placeholder noselect">
+                {!this.state.chatOpened && <div className="chat-placeholder noselect" style={{ height: "100vh" }}>
                     <p>{langGetString("open_chat")}</p>
                 </div>}
                 {this.state.chatOpened && <ChatWindow messenger={this} app={this.props.app} chatInfo={this.state.chatInfo} />}

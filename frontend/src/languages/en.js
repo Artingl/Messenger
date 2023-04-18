@@ -20,4 +20,7 @@ export const _EN_MESSAGES = {
     user_id_nickname: "User ID or Nickname",
     somebody_typing: "{nickname} is typing...",
     type_message: "Type a message...",
+    unable_authenticate: "Unable to authenticate! Try to reload the page.",
+    noone_found: "No body was found. Try to change your request.",
+    type_id_nickname: "Try to type user's ID or Nickname...",
 };

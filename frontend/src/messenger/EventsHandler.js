@@ -16,6 +16,7 @@ export default class EventsHandler
         }
 
         this.currentChatCallback = undefined
+        this.searchMessagesHandler = undefined
     }
 
     setup()
@@ -28,6 +29,22 @@ export default class EventsHandler
                 this.currentChatCallback("keyboard", e)
             }
         })
+    }
+
+    pollSearchMessage(value)
+    {
+        if (this.searchMessagesHandler !== undefined)
+            this.searchMessagesHandler(value)
+    }
+
+    unsubscribeSearchMessage()
+    {
+        this.searchMessagesHandler = undefined
+    }
+
+    subscribeSearchMessage(callback)
+    { // only one search message subscriber is allowed
+        this.searchMessagesHandler = callback
     }
 
     setupChatEvents(callback, chatInfo)
@@ -53,10 +70,13 @@ export default class EventsHandler
     // cancels all events that related to currently opened chat
     popChatEvents()
     {
+        if (this.currentChatCallback !== undefined)
+            this.currentChatCallback("destroy", undefined)
+
         for (let i in this.eventsIds.chat)
         {
             this.app.cancelLongpoll(this.eventsIds.chat[i])
-        }    
+        }
 
         this.currentChatCallback = undefined
     }

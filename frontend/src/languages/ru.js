@@ -15,9 +15,12 @@ export const _RU_MESSAGES = {
     loading_information: "Загрузка",
     error_unable_get_chats: "Не удалось получить список чатов (Код ошибки: {errorCode})",
     error_unable_send_request: "Не удалось отправить запрос на сервер (Код ошибки: {errorCode})",
-    error_unable_get_chat: "Не удалось получить информацию о чате (Error code: {errorCode})",
+    error_unable_get_chat: "Не удалось получить информацию о чате (Код ошибки: {errorCode})",
     open_chat: "Откройте любую переписку...",
     user_id_nickname: "Информация о пользователе",
     somebody_typing: "{nickname} печатает...",
     type_message: "Напишите сообщение...",
+    unable_authenticate: "Ошибка авторищации. Попробуйте перезагрузить страницу.",
+    noone_found: "Не удалось никого найти. Попробуйте поменять свой запрос.",
+    type_id_nickname: "Попробуйте написать ID пользователя или его Никнейм...",
 };

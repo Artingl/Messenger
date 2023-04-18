@@ -1,5 +1,5 @@
 import time
-from datetime import datetime
+from datetime import MAXYEAR, datetime
 import typing as t
 
 LAST_ID = 0

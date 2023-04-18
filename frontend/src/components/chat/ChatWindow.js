@@ -24,6 +24,17 @@ export default class ChatWindow extends React.Component {
             typingTimer: undefined,
         };
 
+        // id of the last message in the chat
+        this.lastMessageId = 0
+        this.messagesOffset = 0
+
+        // Indicates whether or not the chat fully loaded
+        this.wholeChatLoaded = false
+
+        // flag for identifying that loading request is sent to the server
+        this.isLoadingMessages = false
+
+        this.messagesIds = []
         this.loadMessages()
 
         // setup events for current chat
@@ -31,6 +42,19 @@ export default class ChatWindow extends React.Component {
             (name, data) => this.eventsHandler(name, data),
             this.props.chatInfo
         )
+    }
+
+    componentDidMount()
+    {
+        this.scrollToBottom()
+
+        // setup scroll event
+        $("#messages").on("scroll", () => this.messagesScrollHandler());
+    }
+
+    scrollToBottom()
+    {
+        $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight+256 }, 0)
     }
 
     eventsHandler(name, data)
@@ -46,7 +70,24 @@ export default class ChatWindow extends React.Component {
                 // new message event
                 let message = data.message
                 let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
-                this.addMessage(message, side)
+
+                // check that the message is not already in the chat
+                if (this.messagesIds.includes(message.id))
+                {
+                    break
+                }
+
+                const prevHeight = $("#messages").scrollTop()
+
+                this.addMessage(message, side, () => {
+                    // Scroll to bottom if the new message is in out view
+                    let elem = $("#messages");
+                    let maxScrollTop = elem[0].scrollHeight - elem.outerHeight();
+                    let changedHeight = $("#messages").scrollTop() - prevHeight
+
+                    if (maxScrollTop - changedHeight - 90 < $("#messages").scrollTop())
+                        this.scrollToBottom()
+                })
                 break
 
             case "keyboard":
@@ -54,9 +95,30 @@ export default class ChatWindow extends React.Component {
                 this.keyPress(data)
                 break
 
+            case "destroy":
+                // on chat closing
+                this.destroy()
+                break
+
             default: // invalid event
                 break
         }
+    }
+
+    messagesScrollHandler()
+    { // Handler for messages list scroll. This should load messages by offset when it is needed
+        if ($("#messages").scrollTop() < 40 && !this.isLoadingMessages && !this.wholeChatLoaded)
+        {   // load rest messages
+            this.messagesOffset += 64
+            this.loadMessagesByOffset()
+
+            this.isLoadingMessages = true
+        }
+    }
+
+    destroy()
+    {
+        $("#messages").off("scroll");
     }
 
     setTyping(data)
@@ -68,14 +130,23 @@ export default class ChatWindow extends React.Component {
         if (this.state.typingTimer !== undefined)
             clearTimeout(this.state.typingTimer)
 
-        this.setState({
-            typingMessage: langGetStringFormatted("somebody_typing", { nickname: data.nickname }),
-            
-            // set timeout, so the typing message will be cleared if no new events produces
-            typingTimer: setTimeout(() => {
-                this.setState({ typingMessage: "", typingTimer: undefined })
-            }, 2500)
-        })
+        if (data.uid === -1)
+        { // server tells us that we need to abort typing event
+            this.setState({
+                typingMessage: "",
+                typingTimer: undefined,
+            })
+        }
+        else {
+            this.setState({
+                typingMessage: langGetStringFormatted("somebody_typing", { nickname: data.nickname }),
+                
+                // set timeout, so the typing message will be cleared if no new events produces
+                typingTimer: setTimeout(() => {
+                    this.setState({ typingMessage: "", typingTimer: undefined })
+                }, 2500)
+            })
+        }
     }
 
     keyPress(event)
@@ -84,6 +155,67 @@ export default class ChatWindow extends React.Component {
         {
             this.sendMessage()
         }
+    }
+
+    loadMessagesByOffset()
+    {
+        this.props.app.apiCall((isSuccess, result) => {
+            if (isSuccess)
+            {
+                let pool = this.state.messagesPool
+
+                if (result.data.messages.length === 0)
+                { // all messages have been already loaded
+                    this.wholeChatLoaded = true
+                }
+
+                // show all messages that we got
+                for (let i in result.data.messages)
+                {
+                    let message = result.data.messages[result.data.messages.length - i - 1]
+                    let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
+
+                    if (message.id === 0)
+                    {
+                        this.wholeChatLoaded = true
+                    }
+
+                    pool = [<ChatMessage side={side} timeFormat={this.props.app.getRegion()} messageData={message} />, ...pool]
+
+                    this.messagesIds.push(message.id)
+                }
+
+                // previous list scroll height
+                const prevHeight = $('#messages')[0].scrollHeight
+
+                this.setState({ messagesPool: pool }, () => {
+                    // update messages list scroll based on new loaded messages
+                    $('#messages').animate({ scrollTop: $('#messages')[0].scrollHeight - prevHeight }, 0)
+
+                    this.isLoadingMessages = false
+                })
+            }
+            else {
+                if (result.code === 1)
+                { // unable to authenticate
+                    this.props.app.logout()
+                }
+                else if (result.code === 2)
+                { // chat does not exist
+                    // Update chats list
+                    this.messenger.requestChats()
+                }
+                else if (result.code === 3)
+                { // user is not in the members list
+                    // Update chats list
+                    this.messenger.requestChats()
+                }
+                else
+                { // server error
+                    this.messenger.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.props.messenger.requestChats())
+                }
+            }
+        }, { uid: this.props.chatInfo.uid, messages_offset: this.messagesOffset }, "/messenger/chat", "GET")
     }
 
     loadMessages()
@@ -101,13 +233,16 @@ export default class ChatWindow extends React.Component {
         }
     }
 
-    addMessage(messageData, side)
+    addMessage(messageData, side, callback)
     {
         let pool = this.state.messagesPool
         pool.push(<ChatMessage side={side} timeFormat={this.props.app.getRegion()} messageData={messageData} />)
         
         // Update messages list
-        this.setState({ messagesPool: pool })
+        this.setState({ messagesPool: pool }, () => { if (callback !== undefined) callback() })
+
+        this.messagesIds.push(messageData.id)
+        this.lastMessageId = messageData.id + 1
     }
 
     typingMessage(message)
@@ -135,11 +270,17 @@ export default class ChatWindow extends React.Component {
         if (this.state.currentMessage === "")
             return
 
+        const theMessage = this.state.currentMessage
+
         // Send message
         this.props.app.apiCall((isSuccess, result) => {
             if (isSuccess)
             {
                 // Message was sent
+                this.addMessage({ id: this.lastMessageId, data: theMessage, attachments: [], timestamp: new Date().getTime() / 1000 }, "right")
+
+                // scroll to bottom if the message was sent
+                this.scrollToBottom()
             }
             else {
                 if (result.code === 1)
@@ -162,7 +303,7 @@ export default class ChatWindow extends React.Component {
                 }
                 else
                 { // server error
-                    this.props.messenger.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.requestChats())
+                    this.props.messenger.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.props.messenger.requestChats())
                 }
             }
         }, {
@@ -185,12 +326,12 @@ export default class ChatWindow extends React.Component {
                 <div id="avatar" />
             </div>
 
-            <ul>{this.state.messagesPool}</ul>
+            <ul id="messages">{this.state.messagesPool}</ul>
             
             <div id="chat-message-input">
                 <p id="typing-event">{this.state.typingMessage}</p>
 
-                <TextField className="message-field" hint={langGetString("type_message")} setValue={(msg) => this.typingMessage(msg)} />
+                <TextField className="message-field" hint={langGetString("type_message")} setValue={(msg) => this.typingMessage(msg)} autofocus={true} />
                 <Button icon={<SendIcon />} onClick={() => this.sendMessage()} />
             </div>
         </div>
