@@ -9,6 +9,19 @@ import PopupDialog from './components/PopupDialog.js'
 
 import './App.css'
 
+export const WEB_API_URL = "http://192.168.1.8:8080/api"
+export const WS_API_URL = "ws://192.168.1.8:8080/ws"
+
+
+
+// useful property
+Object.defineProperty(String.prototype, 'capitalize', {
+  value: function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+  },
+  enumerable: false
+});
+
 
 export default class App extends React.Component {
     constructor(props)
@@ -16,8 +29,6 @@ export default class App extends React.Component {
         super(props);
 
         this.state = {
-            server: "http://192.168.1.8:8080",
-
             token: localStorage.getItem("token"),
             userData: {},
 
@@ -30,14 +41,60 @@ export default class App extends React.Component {
         };
 
         this.language = "ru"
-        this.longpoll = {
-            lastId: 0,
-            pool: {}
-        }
-
         this.keyUpHandlers = []
 
+        this.websocketServer = undefined
+
         loadLanguage(this.language);
+    }
+
+    async apiCall(callback, data, apiMethod, httpMethod, version)
+    {
+        if (version === undefined)
+            version = "v1"
+
+        let request = {
+            url: WEB_API_URL + "/" + version + apiMethod,
+            headers: {
+                "Content-Type":"application/json",
+            },
+            type: httpMethod,
+        }
+
+        // add user's token to the header, if it is not undefined
+        if (this.state.token !== undefined)
+            request.headers['authorization'] = this.state.token
+        
+        // add data to the request, if it is not empty
+        if (Object.keys(data).length !== 0)
+            request['data'] = (httpMethod === "GET" ? data : JSON.stringify(data))
+
+        // todo: remove double slashes in url
+        $.ajax(request).done((result) => {
+            callback(200, result)
+        }).fail((jqXHR, exception) => {
+            callback(
+                jqXHR.status,
+                jqXHR.responseJSON === undefined ? {} : jqXHR.responseJSON
+            )
+        })
+    }
+
+    async login(email, password, callback)
+    {
+        await this.apiCall((code, data) => {
+            // send result to the callback
+            callback(code, data) 
+
+            // check result code
+            if (code === 200)
+            {
+                // save token and reload the page
+                localStorage.setItem("token", data.token)
+                this.setState({ token: data.token })
+                window.location.reload()
+            }
+        }, { email: email, password: password }, '/auth/login', 'POST')
     }
 
     keyUpHandler(event) 
@@ -83,20 +140,18 @@ export default class App extends React.Component {
             return;
         }
 
-        this.setState({ isLoggedIn: true })
-
         // try to login using token
-        this.apiCall((isSuccess, result) => {
-            if (isSuccess)
+        this.apiCall((code, data) => {
+            if (code === 200)
             {
-                this.authenticateSuccess(result.data)
+                this.authenticateSuccess(data)
             }
             else {
                 // unable to login
                 localStorage.removeItem("token")
                 window.location.reload()
             }
-        }, { token: this.state.token }, "/user/login", "GET")
+        }, {}, "/auth/token", "GET")
     }
 
     logout()
@@ -115,132 +170,10 @@ export default class App extends React.Component {
         return this.language + "-US"
     }
 
-    cancelLongpoll(id)
-    {
-        if (this.longpoll.pool[id] === undefined)
-            return
-
-        // abort ajax
-        this.longpoll.pool[id].request.abort()
-
-        delete this.longpoll.pool[id]
-    }
-
-    apiLongpoll(callback, data, apiMethod, version)
-    {
-        const id = this.longpoll.lastId++
-        
-        if (version === undefined)
-            version = "v1"
-
-        data['token'] = this.state.token
-        
-        // set recent_id if it was not set
-        if (data['recent_id'] === undefined)
-            data['recent_id'] = -1
-
-        this.longpoll.pool[id] = {
-            state: true,
-            request: $.ajax({
-                url: this.state.server + "/" + version + apiMethod,
-                type: "GET",
-                data: data,
-                contentType: "application/json",
-                dataType: "json",
-                timeout: 60000,
-            }).done((res) => {
-                data['recent_id'] = res.data.poll_result[2]
-                callback(res.data.poll_result[0], res.data.poll_result[1])
-
-                // call longpoll again if current event is not canceled
-                if (this.longpoll.pool[id] !== undefined)
-                {
-                    this.apiLongpoll(callback, data, apiMethod, version)
-                }
-            }).fail((jqXHR, exception) => {
-                // call longpoll again if current event is not canceled
-                if (exception === "timeout" && this.longpoll.pool[id] !== undefined)
-                {
-                    this.apiLongpoll(callback, data, apiMethod, version)
-                }
-                else {
-                    this.reportServerConnectionError()
-                }
-            })
-        }
-
-        return id
-    }
-
-    reportServerConnectionError()
-    {
-    }
-
-    async apiCall(callback, data, apiMethod, httpMethod, version)
-    {
-        if (version === undefined)
-            version = "v1"
-
-        data['token'] = this.state.token
-
-        // todo: remove double slashes in url
-        $.ajax({
-            url: this.state.server + "/" + version + apiMethod,
-            type: httpMethod,
-            data: (httpMethod === "GET" ? data : JSON.stringify(data)),
-            contentType: "application/json",
-            dataType: "json",
-            success: (res) => { callback(res.code === 0, res) }
-        }).catch((err) => {
-            err = err.responseJSON;
-            if (err === undefined || err === null || err.code === undefined)
-            {
-                err = {};
-                err.code = -1;
-            }
-
-            callback(false, err)
-        })
-    }
-
     authenticateSuccess(data)
     {
         // save user data that we got with the response
-        this.setState({ userData: data })
-        this.forceUpdate(() =>
-            this.setState({ isLoggedIn: true }))
-    }
-
-    async login(email, password, callback)
-    {
-        // todo: change to apiCall method
-        return $.ajax({
-            url: this.state.server + "/v1/user/login",
-            type: 'GET',
-            contentType: "application/json",
-            dataType: "json",
-            data: { email: email, password: password },
-            success: (res) => {
-                // send result to the callback
-                callback(res.code) 
-
-                // check result code
-                if (res.code === 0)
-                {
-                    // save token and reload the page
-                    localStorage.setItem("token", res.data.token)
-                    this.setState({ token: res.data.token })
-                    window.location.reload()
-                }
-            }
-        }).catch((err) => {
-            if (err.responseJSON === undefined)
-            {
-                // 105 code always means that server is offline
-                callback(105)
-            }
-            else callback(err.responseJSON.code)
-        });
+        this.setState({ userData: data, isLoggedIn: true })
     }
 
     setLoadingState(state, msg)

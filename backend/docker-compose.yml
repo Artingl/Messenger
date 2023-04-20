@@ -1,0 +1,58 @@
+version: '3.7'
+
+services:
+  auth_service:
+    build: ./auth-service
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./auth-service/:/app/
+    ports:
+      - 8001:8000
+    environment:
+      - DATABASE_URI=postgresql+asyncpg://auth:12345678@auth_db/auth_db_dev
+    depends_on:
+      - auth_db
+
+  chats_service:
+    build: ./chats-service
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./chats-service/:/app/
+    ports:
+      - 8002:8000
+    environment:
+      - DATABASE_URI=postgresql+asyncpg://chats:12345678@chats_db/chats_db_dev
+    depends_on:
+      - chats_db
+
+  auth_db:
+    image: postgres:12.1-alpine
+    volumes:
+      - postgres_data_auth:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=auth
+      - POSTGRES_PASSWORD=12345678
+      - POSTGRES_DB=auth_db_dev
+
+  chats_db:
+    image: postgres:12.1-alpine
+    volumes:
+      - postgres_data_chats:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=chats
+      - POSTGRES_PASSWORD=12345678
+      - POSTGRES_DB=chats_db_dev
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx_config.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - chats_service
+      - auth_service
+
+volumes:
+  postgres_data_auth:
+  postgres_data_chats:

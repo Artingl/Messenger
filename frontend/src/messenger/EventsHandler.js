@@ -1,3 +1,6 @@
+import { WebSocketConnection, WebSocketPacket, WebSocketPacketId } from './WebSocket.js'
+
+
 // list of events needed by chats
 const EVENTS = ["typing", "new_message"]
 
@@ -15,6 +18,9 @@ export default class EventsHandler
             chat: [],
         }
 
+        this.globalEvents = []
+        this.websocketConnections = []
+
         this.currentChatCallback = undefined
         this.searchMessagesHandler = undefined
     }
@@ -29,6 +35,26 @@ export default class EventsHandler
                 this.currentChatCallback("keyboard", e)
             }
         })
+
+        // connect to websocket servers
+        this.setupWebsocketConnection(() => {}, 'chats', 'v1')
+    }
+
+    uninstall()
+    {
+        // close all other websocket connections
+        for (let i in this.websocketConnections)
+        {
+            this.websocketConnections[i].close()
+        }
+    }
+
+    setupWebsocketConnection(callback, service, version)
+    {
+        // create new connection to the server
+        this.websocketConnections = [
+            new WebSocketConnection(service, version, this.app.state.userData)
+        ]
     }
 
     pollSearchMessage(value)
@@ -45,6 +71,35 @@ export default class EventsHandler
     subscribeSearchMessage(callback)
     { // only one search message subscriber is allowed
         this.searchMessagesHandler = callback
+    }
+
+
+
+
+    // legacy
+
+    setupChatGlobalEvents(callback)
+    {
+        // cancel all other global events if any
+        for (let i in this.globalEvents)
+        {
+            this.app.cancelLongpoll(this.globalEvents[i])
+        }
+
+        this.globalEvents = []
+
+        for (let i in EVENTS)
+        {
+            this.globalEvents.push(this.app.apiLongpoll((isSuccess, data) => {
+                if (isSuccess)
+                {
+                    callback(EVENTS[i], data)
+                }
+            }, { 
+                method: "global_" + EVENTS[i],
+                uid: -1
+            }, "/messenger/chat/poll"))
+        }
     }
 
     setupChatEvents(callback, chatInfo)

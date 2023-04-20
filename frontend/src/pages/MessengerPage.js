@@ -1,4 +1,5 @@
 import React from "react";
+import $ from 'jquery';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
@@ -31,15 +32,86 @@ export default class MessengerPage extends React.Component
             chats: [],
 
             chatOpened: false,
-            chatInfo: [
-            ],
+            chatInfo: [],
 
             // wait interval on API error. It will grow up to 60 seconds on every error
             lastInterval: 5,
         };
+        
+        // timers pool for all global chats events
+        this.chatsEventTimers = {}
 
         this.eventsHandler = new EventsHandler(this.props.app, this)
         this.eventsHandler.setup()
+
+        //this.eventsHandler.setupChatGlobalEvents((n, d) => this.globalEventsHandler(n, d))
+    }
+    
+    componentDidMount()
+    {
+        this.requestChats()
+        //this.props.app.subscribeKeyboardEvent((e) => this.keyHandler(e))
+    }
+
+    componentWillUnmount()
+    {
+        this.eventsHandler.uninstall()
+    }
+
+    globalEventsHandler(name, data)
+    {
+        switch (name)
+        {
+            case "typing":
+                this.setTyping(data)
+                break
+
+            case "new_message":
+                this.setNewMessage(data)
+                break
+
+            default: // invalid event
+                console.log("Invalid event", name)
+                break
+        }
+    }
+
+    setNewMessage(data)
+    { // update chats description with new message that was sent
+        // cancel all typing events for this chat if any
+        if (this.chatsEventTimers[data.chat_id] !== undefined)
+        {
+            clearTimeout(this.chatsEventTimers[data.chat_id])
+            delete this.chatsEventTimers[data.chat_id]
+        }
+
+        // update chat's last message. Works the same way as with the typing event. See in 'setTyping' method.
+        $(".chat-element-description-" + data.chat_id).text(data.message.data)
+    }
+    
+    setTyping(data)
+    { // updates chats description if somebody is typing
+        // check that event does not tell about ourself
+        if (data.user_id === this.props.app.state.userData.uid)
+            return
+
+        if (this.chatsEventTimers[data.chat_id] !== undefined)
+        {
+            clearTimeout(this.chatsEventTimers[data.chat_id])
+            delete this.chatsEventTimers[data.chat_id]
+        }
+
+        // every chat element in the list has description, and the description has a class
+        // that's unique for every element. It is in format 'chat-element-description-{chatId}'.
+        // Using this we can update the description on fly
+        const prevDescription = $(".chat-element-description-" + data.chat_id).text()
+        $(".chat-element-description-" + data.chat_id).text(langGetStringFormatted("somebody_typing", { nickname: data.nickname }))
+
+        // set timeout, so the typing message will be cleared if no new events produces
+        this.chatsEventTimers[data.chat_id] = setTimeout(() => {
+            $(".chat-element-description-" + data.chat_id).text(prevDescription)
+            delete this.chatsEventTimers[data.chat_id]
+        }, 2200)
     }
 
     keyHandler(event)
@@ -62,29 +134,28 @@ export default class MessengerPage extends React.Component
         }
 
     }
-    
-    componentDidMount()
-    {
-        this.requestChats()
-        this.props.app.subscribeKeyboardEvent((e) => this.keyHandler(e))
-    }
 
     updateChats(chats)
     {
         let chatsPool = []
 
-        for (let i in chats)
+        // sort chats by their last update time
+        let sortedChat = Object.entries(chats)
+            .sort(([,a],[,b]) => a.last_update-b.last_update)
+            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+        for (let i in sortedChat)
         {
             let chat = chats[i]
 
-            chatsPool.push(<ChatElement
+            chatsPool = [<ChatElement
                 onClick={(chatId) => this.openChat(chatId)}
                 chatId={chat.uid}
                 avatar={chat.settings.avatar}
                 avatarLetter={chat.settings.avatar === "default" ? chat.chat_title[0] : undefined}
                 title={chat.chat_title}
                 description={chat.last_message.data}
-            />)
+            />, ...chatsPool]
         }
 
         if (chatsPool.length > 0)
@@ -122,21 +193,18 @@ export default class MessengerPage extends React.Component
         this.closeChat()
        
         // request chats from the server
-        this.props.app.apiCall((isSuccess, result) => {
-            if (isSuccess)
+        this.props.app.apiCall((code, data) => {
+            if (code === 200)
             {
-                this.updateChats(result.data[0])
+                this.updateChats(data)
             }
             else {
-                if (result.code === 2)
-                {   // chats not found
-                    this.updateChats([])
-                }
-                else { // unable get result
-                    this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chats", {errorCode: result.code}), () => this.requestChats())
-                }
+                this.displayErrorTimeout(
+                    langGetStringFormatted("error_unable_get_chats", {errorCode: code}),
+                    () => this.requestChats()
+                )
             }
-        }, { }, "/messenger/chats", "GET")
+        }, {}, "/chats", "GET")
     }
 
     requestChatCreate(userData)
@@ -155,7 +223,10 @@ export default class MessengerPage extends React.Component
                 // else statement would execute only when an internal server error occurred
                 this.displayErrorTimeout(langGetStringFormatted("error_unable_send_request", {errorCode: result.code}), () => this.requestChats())
             }
-        }, { members: [userData.uid], chatTitle: `${userData.nickname}, ${this.props.app.state.userData.nickname}` }, "/messenger/chats", "POST")
+        }, {
+            members: [userData.uid],
+            chatTitle: `${userData.nickname.capitalize()}, ${this.props.app.state.userData.nickname.capitalize()}`
+        }, "/messenger/chats", "POST")
     }
 
     openChat(chatId)

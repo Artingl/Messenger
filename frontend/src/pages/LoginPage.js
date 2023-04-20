@@ -39,25 +39,26 @@ export default class LoginPage extends React.Component
             $("#hint").css("opacity", 1)
         }
 
-        await this.props.app.login(email, password, (code) => {
+        // send the login request to the server
+        await this.props.app.login(email, password, (code, data) => {
             // check for errors
             $("#hint").css("opacity", 0)
             switch (code)
             {
-                case 0: // login successful
+                case 200: // login successful
                     break
 
-                case -1: // internal error
+                case 500: // internal error
                     $("#hint").html(langGetString("internal_error"))
                     $("#hint").css("opacity", 1)
                     break
 
-                case 1: // invalid user
+                case 404: // invalid user
                     $("#hint").html(langGetString("incorrect_email_password"))
                     $("#hint").css("opacity", 1)
                     break
 
-                case 105: // unable to connect
+                case -1: // unable to connect
                     $("#hint").html(langGetString("unable_connect"))
                     $("#hint").css("opacity", 1)
                     break

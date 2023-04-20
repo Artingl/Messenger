@@ -23,4 +23,6 @@ export const _RU_MESSAGES = {
     unable_authenticate: "Ошибка авторищации. Попробуйте перезагрузить страницу.",
     noone_found: "Не удалось никого найти. Попробуйте поменять свой запрос.",
     type_id_nickname: "Попробуйте написать ID пользователя или его Никнейм...",
+
+    people_online: [ "{number} человек{mod} онлайн", (number) => number >= 2 && number < 5 ? "а" : "" ]
 };

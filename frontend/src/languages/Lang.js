@@ -22,6 +22,24 @@ export function langGetString(name)
     }
 }
 
+// used when some words have to be changed based on the number provided
+export function langGetStringWithNumber(name, number)
+{
+    const sentence =  langGetString(name)
+
+    let source = sentence[0]
+    let params = {
+        number: number,
+        mod: sentence[1](number)
+    }
+
+    $.each(params, function (i, n) {
+        source = source.replace(new RegExp("\\{" + i + "\\}", "g"), n);
+    })
+
+    return source
+}
+
 export function langGetStringFormatted(name, params)
 {
     let source = langGetString(name)

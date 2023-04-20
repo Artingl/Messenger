@@ -7,7 +7,7 @@ import ChatMessage from './ChatMessage.js'
 import TextField from "../ui/TextField.js"
 import Button from "../ui/Button.js"
 
-import { langGetString, langGetStringFormatted } from '../../languages/Lang.js'
+import { langGetString, langGetStringFormatted, langGetStringWithNumber } from '../../languages/Lang.js'
 
 import './ChatWindow.css'
 
@@ -22,6 +22,8 @@ export default class ChatWindow extends React.Component {
             timeSinceLastActivity: 0,
             typingMessage: "",
             typingTimer: undefined,
+
+            onlineCounter: this.props.chatInfo.online,
         };
 
         // id of the last message in the chat
@@ -276,8 +278,18 @@ export default class ChatWindow extends React.Component {
         this.props.app.apiCall((isSuccess, result) => {
             if (isSuccess)
             {
+                const messageData = {
+                    id: this.lastMessageId,
+                    data: theMessage,
+                    attachments: [],
+                    timestamp: new Date().getTime() / 1000
+                }
+
                 // Message was sent
-                this.addMessage({ id: this.lastMessageId, data: theMessage, attachments: [], timestamp: new Date().getTime() / 1000 }, "right")
+                this.addMessage(messageData, "right")
+
+                // tell the chats list that a new message was produced
+                this.props.messenger.setNewMessage({ chat_id: this.props.chatInfo.uid, message: messageData })
 
                 // scroll to bottom if the message was sent
                 this.scrollToBottom()
@@ -322,15 +334,18 @@ export default class ChatWindow extends React.Component {
     {
         return <div className="chat-window" style={this.props.style}>
             <div id="chat-header">
-                <p >{this.props.chatInfo.chat_title}</p>
+                <div id="left-info">
+                    <p id="title">{this.props.chatInfo.chat_title}</p>
+                    {this.state.typingTimer !== undefined && <p id="info">{this.state.typingMessage}</p>}
+                    {this.state.typingTimer === undefined && <p id="info">{langGetStringWithNumber("people_online", this.state.onlineCounter)}</p>}
+                </div>
+
                 <div id="avatar" />
             </div>
 
             <ul id="messages">{this.state.messagesPool}</ul>
             
             <div id="chat-message-input">
-                <p id="typing-event">{this.state.typingMessage}</p>
-
                 <TextField className="message-field" hint={langGetString("type_message")} setValue={(msg) => this.typingMessage(msg)} autofocus={true} />
                 <Button icon={<SendIcon />} onClick={() => this.sendMessage()} />
             </div>

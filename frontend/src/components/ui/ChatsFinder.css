@@ -2,6 +2,8 @@
 .base-component-div ul {
     width: 100%;
     max-height: fit-content;
+    
+    list-style-type: none;
 
     display: flex;
     flex-direction: column;

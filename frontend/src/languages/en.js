@@ -23,4 +23,6 @@ export const _EN_MESSAGES = {
     unable_authenticate: "Unable to authenticate! Try to reload the page.",
     noone_found: "No body was found. Try to change your request.",
     type_id_nickname: "Try to type user's ID or Nickname...",
+
+    people_online: [ "{number} people online", () => ""]
 };

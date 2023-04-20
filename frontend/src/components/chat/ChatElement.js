@@ -23,7 +23,7 @@ export default class ChatElement extends React.Component {
             {!this.props.avatarLetter && <img alt={this.props.chat_id + "_avatar"} src={this.props.avatar} className="nodrag" />}
             <div id="title" className="noselect">{this.props.title}</div>
             {this.props.avatarLetter && <p style={{ backgroundColor: getLetterAvatarColor(this.props.avatarLetter.charCodeAt(0) & 0xf) }} id="avatar-letter" className="noselect">{this.props.avatarLetter}</p>}
-            <p id="description" className="noselect">{this.props.description}</p>
+            <p id="description" className={"noselect chat-element-description-" + this.props.chatId}>{this.props.description}</p>
         </li>
     }
 }

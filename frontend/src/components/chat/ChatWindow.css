@@ -6,12 +6,23 @@
     border-left: 1px solid var(--secondary-color);
 }
 
-.chat-window #chat-header p {
+.chat-window #chat-header #left-info #title {
     font-family: 'Montserrat', sans-serif;
     font-weight: 700;
     font-size: 1.1em;
 
     margin-left: 25px;
+}
+
+.chat-window #chat-header #left-info #info {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.9em;
+
+    margin-top: 5px;
+    margin-left: 25px;
+
+    color: var(--secondary-font-color);
 }
 
 .chat-window #chat-header #avatar {
@@ -61,19 +72,6 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-around;
-}
-
-.chat-window #typing-event {
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 700;
-    font-size: 0.9em;
-
-    position: absolute;
-
-    margin-top: -120px;
-    left: 10px;
-
-    color: #ccc;
 }
 
 .chat-window ul {
