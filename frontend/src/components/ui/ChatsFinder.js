@@ -41,7 +41,7 @@ export default class ChatsFinder extends React.Component
 
     findUser()
     {
-        if (this.state.userInfo === undefined || this.state.userInfo.length <= 1)
+        if (this.state.userInfo === undefined || this.state.userInfo.length <= 3)
         {
             this.setState({ usersList: [
                 <p id="err-msg" className="noselect">{langGetString("type_id_nickname")}</p>
@@ -50,14 +50,14 @@ export default class ChatsFinder extends React.Component
         }
         
         // request user by its info from the server
-        this.props.app.apiCall((isSuccess, result) => {
+        this.props.app.apiCall((code, data) => {
             let resultArray = []
 
-            if (isSuccess)
+            if (code === 200)
             {
-                for (let i in result.data[0])
+                for (let i in data)
                 {
-                    let user = result.data[0][i]
+                    let user = data[i]
 
                     // if user did not set an avatar, show their first letter from nickname
                     if (user.settings.avatar === "default")
@@ -66,7 +66,7 @@ export default class ChatsFinder extends React.Component
                             avatarLetter={user.nickname[0]}
                             title={user.nickname}
                             description={user.login}
-                            chatId={user.uid}
+                            uuid={user.uuid}
                             onClick={() => this.createDialog(user)}
                         />)
                     }
@@ -75,25 +75,25 @@ export default class ChatsFinder extends React.Component
                             avatar={user.settings.avatar}
                             title={user.nickname}
                             description={user.login}
-                            chatId={user.uid}
+                            uuid={user.uuid}
                             onClick={() => this.createDialog(user)}
                         />)
                     }
                 }
             }
             else {
-                if (result.code === 2)
+                if (code === 404)
                 { // no users were found
                     resultArray.push(<p id="err-msg" className="noselect">{langGetString("noone_found")}</p>)
                 }
-                else if (result.code === 1)
+                else if (code === 401)
                 { // unable to authenticate using token
                     resultArray.push(<p id="err-msg" className="noselect">{langGetString("unable_authenticate")}</p>)
                 }
             }
 
             this.setState({ usersList: resultArray })
-        }, { user_info_query: this.state.userInfo }, "/messenger/user/info", "GET")
+        }, {}, `/users/find/${encodeURIComponent(this.state.userInfo)}`, "GET")
     }
 
     createDialog(userData)

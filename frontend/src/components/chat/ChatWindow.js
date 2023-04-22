@@ -36,7 +36,7 @@ export default class ChatWindow extends React.Component {
         // flag for identifying that loading request is sent to the server
         this.isLoadingMessages = false
 
-        this.messagesIds = []
+        this.messagesUUIDs = []
         this.loadMessages()
 
         // setup events for current chat
@@ -71,10 +71,16 @@ export default class ChatWindow extends React.Component {
             case "new_message":
                 // new message event
                 let message = data.message
-                let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
+                let side = message.user_uuid === this.props.app.state.userData.uuid ? "right" : "left"
 
                 // check that the message is not already in the chat
-                if (this.messagesIds.includes(message.id))
+                if (this.messagesUUIDs.includes(message.uuid))
+                {
+                    break
+                }
+
+                // Check that message is visible
+                if (!message.is_visible)
                 {
                     break
                 }
@@ -184,7 +190,7 @@ export default class ChatWindow extends React.Component {
 
                     pool = [<ChatMessage side={side} timeFormat={this.props.app.getRegion()} messageData={message} />, ...pool]
 
-                    this.messagesIds.push(message.id)
+                    this.messagesUUIDs.push(message.uuid)
                 }
 
                 // previous list scroll height
@@ -227,9 +233,15 @@ export default class ChatWindow extends React.Component {
         {
             let message = this.props.chatInfo.messages[i]
 
+            // Check that message is visible
+            if (!message.is_visible)
+            {
+                continue
+            }
+
             // The side variable is representing message side in the list.
             // If the messages sender is the current user, side is going to be right, otherwise left.
-            let side = message.sender_id === this.props.app.state.userData.uid ? "right" : "left"
+            let side = message.user_uuid === this.props.app.state.userData.uuid ? "right" : "left"
 
             this.addMessage(message, side)
         }
@@ -243,7 +255,7 @@ export default class ChatWindow extends React.Component {
         // Update messages list
         this.setState({ messagesPool: pool }, () => { if (callback !== undefined) callback() })
 
-        this.messagesIds.push(messageData.id)
+        this.messagesUUIDs.push(messageData.uuid)
         this.lastMessageId = messageData.id + 1
     }
 
@@ -335,7 +347,7 @@ export default class ChatWindow extends React.Component {
         return <div className="chat-window" style={this.props.style}>
             <div id="chat-header">
                 <div id="left-info">
-                    <p id="title">{this.props.chatInfo.chat_title}</p>
+                    <p id="title">{this.props.chatInfo.title}</p>
                     {this.state.typingTimer !== undefined && <p id="info">{this.state.typingMessage}</p>}
                     {this.state.typingTimer === undefined && <p id="info">{langGetStringWithNumber("people_online", this.state.onlineCounter)}</p>}
                 </div>

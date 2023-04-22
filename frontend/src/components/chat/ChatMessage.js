@@ -12,7 +12,7 @@ export default class ChatMessage extends React.Component {
     {
         return <li id={"chat-message-" + this.props.side} className="chat-message" style={this.props.style}>
             <div className="message-block" id={this.props.side}>
-                <p id="content">{this.props.messageData.data}</p>
+                <p id="content">{this.props.messageData.content}</p>
                 <p id="time">{this.getFormattedTime()}</p>
             </div>
         </li>

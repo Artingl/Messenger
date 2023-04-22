@@ -44,13 +44,13 @@ export default class MessengerPage extends React.Component
         this.eventsHandler = new EventsHandler(this.props.app, this)
         this.eventsHandler.setup()
 
-        //this.eventsHandler.setupChatGlobalEvents((n, d) => this.globalEventsHandler(n, d))
+        this.eventsHandler.setupChatGlobalEvents((n, d) => this.globalEventsHandler(n, d))
     }
     
     componentDidMount()
     {
         this.requestChats()
-        //this.props.app.subscribeKeyboardEvent((e) => this.keyHandler(e))
+        this.props.app.subscribeKeyboardEvent((e) => this.keyHandler(e))
     }
 
     componentWillUnmount()
@@ -149,24 +149,17 @@ export default class MessengerPage extends React.Component
             let chat = chats[i]
 
             chatsPool = [<ChatElement
-                onClick={(chatId) => this.openChat(chatId)}
-                chatId={chat.uid}
+                onClick={(uuid) => this.openChat(uuid)}
+                uuid={chat.uuid}
                 avatar={chat.settings.avatar}
-                avatarLetter={chat.settings.avatar === "default" ? chat.chat_title[0] : undefined}
-                title={chat.chat_title}
-                description={chat.last_message.data}
+                avatarLetter={chat.settings.avatar === "default" ? chat.title[0] : undefined}
+                title={chat.title}
+                description={chat.last_message.content}
             />, ...chatsPool]
         }
 
-        if (chatsPool.length > 0)
-            this.setState({ chats: chatsPool })
-        else {
-            // add placeholder that tells the user no chats available
-            this.setState({ chats: [
-                <li className="chat-placeholder noselect"><p>{langGetString("no_chats_available")} <div onClick={() => this.beginSearching()} id="create-chat">{langGetString("somebody")}</div>.</p></li>
-            ]})
-        }
-        
+        this.setState({ chats: chatsPool })
+
         this.props.app.setLoadingState(false)
     }
 
@@ -198,6 +191,14 @@ export default class MessengerPage extends React.Component
             {
                 this.updateChats(data)
             }
+            else if (code === 404) {
+                // add placeholder that tells thecuser no chats available
+                this.setState({ chats: [
+                    <li className="chat-placeholder noselect"><p>{langGetString("no_chats_available")} <div onClick={() => this.beginSearching()} id="create-chat">{langGetString("somebody")}</div>.</p></li>
+                ]})
+                
+                this.props.app.setLoadingState(false)
+            }
             else {
                 this.displayErrorTimeout(
                     langGetStringFormatted("error_unable_get_chats", {errorCode: code}),
@@ -210,58 +211,41 @@ export default class MessengerPage extends React.Component
     requestChatCreate(userData)
     {
         // Tell the server that we want to create a dialog. Then open it.
-        this.props.app.apiCall((isSuccess, result) => {
-            if (isSuccess)
+        this.props.app.apiCall((code, data) => {
+            if (code === 200)
             {
                 // Update chats list
                 this.requestChats()
     
                 // Open created chat
-                this.openChat(result.data.uid)
+                this.openChat(data.uuid)
             }
             else {
                 // else statement would execute only when an internal server error occurred
-                this.displayErrorTimeout(langGetStringFormatted("error_unable_send_request", {errorCode: result.code}), () => this.requestChats())
+                this.displayErrorTimeout(langGetStringFormatted("error_unable_send_request", {errorCode: code}), () => this.requestChats())
             }
         }, {
-            members: [userData.uid],
-            chatTitle: `${userData.nickname.capitalize()}, ${this.props.app.state.userData.nickname.capitalize()}`
-        }, "/messenger/chats", "POST")
+            members: [userData.uuid],
+            title: `${userData.nickname.capitalize()}, ${this.props.app.state.userData.nickname.capitalize()}`
+        }, "/chats", "POST")
     }
 
-    openChat(chatId)
+    openChat(uuid)
     {
         // close chat if any open
         this.closeChat()
 
         // Get chat info
-        this.props.app.apiCall((isSuccess, result) => {
-            if (isSuccess)
+        this.props.app.apiCall((code, data) => {
+            if (code === 200)
             {
                 // open the chat
-                this.setState({ chatOpened: true, chatInfo: result.data })
+                this.setState({ chatOpened: true, chatInfo: data })
             }
             else {
-                if (result.code === 1)
-                { // unable to authenticate
-                    this.props.app.logout()
-                }
-                else if (result.code === 2)
-                { // chat does not exist
-                    // Update chats list
-                    this.requestChats()
-                }
-                else if (result.code === 3)
-                { // user is not in the members list
-                    // Update chats list
-                    this.requestChats()
-                }
-                else
-                { // server error
-                    this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: result.code}), () => this.requestChats())
-                }
+                this.displayErrorTimeout(langGetStringFormatted("error_unable_get_chat", {errorCode: code}), () => this.requestChats())
             }
-        }, { uid: chatId, messages_offset: 0 }, "/messenger/chat", "GET")
+        }, {}, `/chats/${encodeURIComponent(uuid)}`, "GET")
     }
 
     closeChat()

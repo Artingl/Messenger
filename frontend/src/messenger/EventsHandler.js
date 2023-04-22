@@ -90,15 +90,15 @@ export default class EventsHandler
 
         for (let i in EVENTS)
         {
-            this.globalEvents.push(this.app.apiLongpoll((isSuccess, data) => {
-                if (isSuccess)
-                {
-                    callback(EVENTS[i], data)
-                }
-            }, { 
-                method: "global_" + EVENTS[i],
-                uid: -1
-            }, "/messenger/chat/poll"))
+            // this.globalEvents.push(this.app.apiLongpoll((isSuccess, data) => {
+            //     if (isSuccess)
+            //     {
+            //         callback(EVENTS[i], data)
+            //     }
+            // }, { 
+            //     method: "global_" + EVENTS[i],
+            //     uid: -1
+            // }, "/messenger/chat/poll"))
         }
     }
 
@@ -110,15 +110,15 @@ export default class EventsHandler
 
         for (let i in EVENTS)
         {
-            this.eventsIds.chat.push(this.app.apiLongpoll((isSuccess, data) => {
-                if (isSuccess)
-                {
-                    callback(EVENTS[i], data)
-                }
-            }, { 
-                method: EVENTS[i],
-                uid: chatInfo.uid
-            }, "/messenger/chat/poll"))
+        //     this.eventsIds.chat.push(this.app.apiLongpoll((isSuccess, data) => {
+        //         if (isSuccess)
+        //         {
+        //             callback(EVENTS[i], data)
+        //         }
+        //     }, { 
+        //         method: EVENTS[i],
+        //         uid: chatInfo.uid
+        //     }, "/messenger/chat/poll"))
         }
     }
 
@@ -130,7 +130,7 @@ export default class EventsHandler
 
         for (let i in this.eventsIds.chat)
         {
-            this.app.cancelLongpoll(this.eventsIds.chat[i])
+            // this.app.cancelLongpoll(this.eventsIds.chat[i])
         }
 
         this.currentChatCallback = undefined

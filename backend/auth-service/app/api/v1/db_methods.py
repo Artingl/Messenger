@@ -5,15 +5,17 @@ from sqlalchemy.future import select
 
 from app.db import db, tables
 from app.api.v1.models import *
+
 import app.utils as utils
 
+from typing import Dict, Any
 from uuid import uuid4, UUID
 
 import bcrypt
 import time
 
 
-def make_user_info(user: tables.User):
+def make_user_info(user: tables.User) -> UserInfo:
     return {
         "uuid": UUID(user.uuid),
         "token": user.token,
@@ -24,7 +26,8 @@ def make_user_info(user: tables.User):
         "last_seen": user.last_seen,
         "region": user.region,
         "settings": utils.public_settings(user),
-        "gender": user.gender
+        "gender": user.gender,
+        "conversations": user.conversations
     }
 
 
@@ -36,11 +39,11 @@ async def db_register_user(info: UserRegister) -> UserInfo:
         
         if check_result.first():
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_409_CONFLICT,
                 detail=[{
                     "loc": ["body"],
                     "msg": "user with same credentials already exist",
-                    "type": "value_error.duplicate"
+                    "type": "value_error"
                 }]
             )
 
@@ -95,19 +98,10 @@ async def db_login_user(info: UserLogin) -> UserInfo:
                     user.password_hash.encode()
             )
             
-            if password != user.password_hash.encode():
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=[{
-                        "loc": ["body"],
-                        "msg": "user not found or incorrect password",
-                        "type": "value_error.not_found"
-                    }])
-
-            # Update user's settings
-            await utils.update_settings(session, user)
-
-            return make_user_info(user)
+            if password == user.password_hash.encode():
+                # Update user's settings
+                await utils.update_settings(session, user)
+                return make_user_info(user)
         
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

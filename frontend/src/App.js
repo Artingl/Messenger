@@ -40,7 +40,7 @@ export default class App extends React.Component {
             popupChildren: undefined,
         };
 
-        this.language = "ru"
+        this.language = "en"
         this.keyUpHandlers = []
 
         this.websocketServer = undefined
@@ -72,10 +72,16 @@ export default class App extends React.Component {
         // todo: remove double slashes in url
         $.ajax(request).done((result) => {
             callback(200, result)
-        }).fail((jqXHR, exception) => {
+        }).fail((resp, exception) => {
+            if (resp.status === 401)
+            { // unable to authorize. logout
+                this.logout()
+                return;
+            }
+
             callback(
-                jqXHR.status,
-                jqXHR.responseJSON === undefined ? {} : jqXHR.responseJSON
+                resp.status,
+                resp.responseJSON === undefined ? {} : resp.responseJSON
             )
         })
     }

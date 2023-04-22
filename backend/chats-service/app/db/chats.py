@@ -13,7 +13,7 @@ class Chats(db.Base):
     uuid = Column(String, nullable=False)
 
     # Members of the chat (user ids)
-    members = Column(ARRAY(Integer), nullable=False)
+    members = Column(ARRAY(String), nullable=False)
 
     # Chat messages
     messages = Column(ARRAY(JSON), default={})

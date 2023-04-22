@@ -21,8 +21,6 @@ async def disconnect():
 
 
 async def connect():
-    engine.connect()
-
     import app.db.tables
     # Init user model
     async with engine.begin() as conn:

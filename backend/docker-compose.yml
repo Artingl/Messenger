@@ -24,6 +24,18 @@ services:
       - DATABASE_URI=postgresql+asyncpg://chats:12345678@chats_db/chats_db_dev
     depends_on:
       - chats_db
+    
+  users_service:
+    build: ./users-service
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./users-service/:/app/
+    environment:
+      - DATABASE_URI=postgresql+asyncpg://auth:12345678@auth_db/auth_db_dev
+    ports:
+      - 8003:8000
+    depends_on:
+      - auth_db
 
   auth_db:
     image: postgres:12.1-alpine
@@ -52,6 +64,7 @@ services:
     depends_on:
       - chats_service
       - auth_service
+      - users_service
 
 volumes:
   postgres_data_auth:

@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, status
 from uuid import UUID, uuid4
 from typing import List
 
+from app.api.v1.db_methods import *
 from app.api.v1.models import *
 
 chats_router = APIRouter()
@@ -18,10 +19,8 @@ async def chats_list(request: Request):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED
         )
-    
-    # print(request.user.fields)
 
-    return []
+    return await db_get_chats(request.user)
 
 
 @chats_router.get('/{uuid}', response_model=ChatInfo)
@@ -35,6 +34,18 @@ async def chat_info(request: Request, uuid: UUID):
             status_code=status.HTTP_401_UNAUTHORIZED
         )
     
-    print(request.user.fields)
+    return await db_find_chat(request.user, uuid)
 
-    return { "uuid": uuid4(), "title": "" }
+
+@chats_router.post('/', response_model=ChatInfo)
+async def chat_create(request: Request, chat_info: ChatCreate):
+    """Creates chat based on the info
+    """
+    
+    # Check authorization
+    if not request.user.is_authenticated:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED
+        )
+
+    return await db_create_chat(request.user, chat_info)

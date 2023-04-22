@@ -22,6 +22,7 @@ class UserInfo(BaseModel):
     last_seen: int
     region: str
     settings: dict
+    conversations: list
 
 
 class UserRegister(BaseModel):
