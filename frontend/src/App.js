@@ -9,8 +9,8 @@ import PopupDialog from './components/PopupDialog.js'
 
 import './App.css'
 
-export const WEB_API_URL = "http://192.168.1.8:8080/api"
-export const WS_API_URL = "ws://192.168.1.8:8080/ws"
+export const WEB_API_URL = "http://127.0.0.1:8080/api"
+export const WS_API_URL = "ws://127.0.0.1:8080/ws"
 
 
 

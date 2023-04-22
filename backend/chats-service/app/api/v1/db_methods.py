@@ -17,7 +17,7 @@ async def make_chat_info(chat: tables.Chats) -> ChatInfo:
         "uuid": UUID(chat.uuid),
         "title": chat.chat_title,
         "members": [UUID(i) for i in chat.members],
-        "messages": chat.messages,
+        "messages": chat.messages[-64:],
         "unread_messages": chat.unread_messages,
         "creation_time": chat.creation_time,
         "last_chat_update": chat.last_chat_update,
@@ -99,7 +99,7 @@ async def db_create_chat(user: AuthUser, info: ChatCreate) -> ChatInfo:
 
         # Add placeholder message
         chat.messages = []
-        await create_message(chat, ADMIN_UUID, "Chat created!", [], is_visible=False)
+        await create_message(chat, DUMMY_UUID, "Chat created!", [], is_visible=False)
 
         # Create the chat
         session.add(chat)

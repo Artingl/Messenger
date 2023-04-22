@@ -12,7 +12,7 @@ class Chats(db.Base):
     # Chat's UUID
     uuid = Column(String, nullable=False)
 
-    # Members of the chat (user ids)
+    # Members of the chat (Users UUIDs)
     members = Column(ARRAY(String), nullable=False)
 
     # Chat messages

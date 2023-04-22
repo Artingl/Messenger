@@ -8,7 +8,7 @@ from typing import List, Dict, Any
 from uuid import UUID, uuid4
 
 
-ADMIN_UUID: UUID = UUID("00000000-0000-0000-0000-000000000000")
+DUMMY_UUID: UUID = UUID("00000000-0000-0000-0000-000000000000")
 
 
 async def update_settings(chat: tables.Chats) -> bool:
@@ -39,7 +39,7 @@ async def create_message(chat: tables.Chats, user: UUID, content: str, attachmen
     })
 
     # Tell sqlalchemy that we modified messages
-    flag_modified(chat, "settings")
+    flag_modified(chat, "messages")
 
     return True
 

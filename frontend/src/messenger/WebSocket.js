@@ -2,19 +2,20 @@ import { WS_API_URL } from '../App.js'
 
 
 export const WebSocketPacketId = {
+    CHAT_EVENT: 0,
 }
 
 export const WebSocketEvent = {
     ON_MESSAGE: 0,
     ON_CLOSE: 1,
-    ON_ERROR: 1,
 }
 
-export function WebSocketPacket(packetId, data)
+export function WebSocketPacket(packetId, data, marker)
 {
     return {
         packet: packetId,
         data: data,
+        marker: marker,
         time: new Date().getTime()
     }
 }
@@ -41,18 +42,14 @@ export class WebSocketConnection {
 
     #onConnection(e) 
     {
-        // call callback if it is not undefined
-        if (this.callbacks[WebSocketEvent.ON_CLOSE] !== undefined)
-            this.callbacks[WebSocketEvent.ON_CLOSE](this, e)
-
         console.log(`Connected to ${this.#connInfo}`)
     }
 
     #onMessage(e)
     {
         // call callback if it is not undefined
-        if (this.callbacks[WebSocketEvent.ON_CLOSE] !== undefined)
-            this.callbacks[WebSocketEvent.ON_CLOSE](this, e)
+        if (this.callbacks[WebSocketEvent.ON_MESSAGE] !== undefined)
+            this.callbacks[WebSocketEvent.ON_MESSAGE](this, e)
     }
 
     #onClose(e)

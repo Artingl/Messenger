@@ -1,8 +1,16 @@
-import { WebSocketConnection, WebSocketPacket, WebSocketPacketId } from './WebSocket.js'
+import {
+    WebSocketConnection,
+    WebSocketEvent,
+    WebSocketPacket,
+    WebSocketPacketId
+} from './WebSocket.js'
 
 
-// list of events needed by chats
-const EVENTS = ["typing", "new_message"]
+// list of all possible event ids for chats
+export const CHAT_EVENTS = [
+    0,  // new message
+    1,  // typing event
+]
 
 
 // Handles all messenger-related events using longpolling
@@ -13,14 +21,13 @@ export default class EventsHandler
         this.app = app
         this.messenger = messenger
 
-        this.eventsIds = {
-            global: [],
-            chat: [],
-        }
+        this.handlers = []
 
-        this.globalEvents = []
-        this.websocketConnections = []
+        // this is used to identify messages in the handler
+        this.lastMarker = 0
+        this.markerCallbacks = {}
 
+        this.websocketConnection = undefined
         this.currentChatCallback = undefined
         this.searchMessagesHandler = undefined
     }
@@ -36,25 +43,40 @@ export default class EventsHandler
             }
         })
 
-        // connect to websocket servers
-        this.setupWebsocketConnection(() => {}, 'chats', 'v1')
+        // connect to websocket server
+        this.websocketConnection = new WebSocketConnection('chats', 'v1', this.app.state.userData)
+
+        // setup websocket handler
+        this.websocketConnection.subscribeEvent(
+            WebSocketEvent.ON_MESSAGE,
+            (_0, _1) => this.#websocketMessagesHandler(_0, _1)
+        )
     }
 
     uninstall()
     {
-        // close all other websocket connections
-        for (let i in this.websocketConnections)
-        {
-            this.websocketConnections[i].close()
-        }
+        // close websocket connection
+        this.websocketConnection.close()
     }
 
-    setupWebsocketConnection(callback, service, version)
+    sendServerEvent(id, data, callback)
     {
-        // create new connection to the server
-        this.websocketConnections = [
-            new WebSocketConnection(service, version, this.app.state.userData)
-        ]
+        const marker = this.lastMarker++
+        
+        // save callback
+        if (callback !== undefined)
+            this.markerCallbacks[marker] = callback
+
+        // send the message
+        this.websocketConnection.sendPacket(
+            WebSocketPacket(id, data, marker)
+        )
+    }
+
+    subscribeEvents(callback)
+    {
+        this.handlers.push(callback)
+        return this.handlers.length - 1
     }
 
     pollSearchMessage(value)
@@ -73,67 +95,27 @@ export default class EventsHandler
         this.searchMessagesHandler = callback
     }
 
-
-
-
-    // legacy
-
-    setupChatGlobalEvents(callback)
+    // private methods
+    #websocketMessagesHandler(ws, event)
     {
-        // cancel all other global events if any
-        for (let i in this.globalEvents)
+        // decode data
+        const data = JSON.parse(event.data)
+
+        // check if we have callback for the message
+        if (this.markerCallbacks[data.marker] !== undefined)
         {
-            this.app.cancelLongpoll(this.globalEvents[i])
+            // call the callback and remove it
+            this.markerCallbacks[data.marker](
+                ws,
+                data.code,
+                data.message,
+                data.data
+            )
+
+            delete this.markerCallbacks[event.marker]
         }
 
-        this.globalEvents = []
 
-        for (let i in EVENTS)
-        {
-            // this.globalEvents.push(this.app.apiLongpoll((isSuccess, data) => {
-            //     if (isSuccess)
-            //     {
-            //         callback(EVENTS[i], data)
-            //     }
-            // }, { 
-            //     method: "global_" + EVENTS[i],
-            //     uid: -1
-            // }, "/messenger/chat/poll"))
-        }
-    }
-
-    setupChatEvents(callback, chatInfo)
-    {
-        // clear events list
-        this.eventsIds.chat = []
-        this.currentChatCallback = callback
-
-        for (let i in EVENTS)
-        {
-        //     this.eventsIds.chat.push(this.app.apiLongpoll((isSuccess, data) => {
-        //         if (isSuccess)
-        //         {
-        //             callback(EVENTS[i], data)
-        //         }
-        //     }, { 
-        //         method: EVENTS[i],
-        //         uid: chatInfo.uid
-        //     }, "/messenger/chat/poll"))
-        }
-    }
-
-    // cancels all events that related to currently opened chat
-    popChatEvents()
-    {
-        if (this.currentChatCallback !== undefined)
-            this.currentChatCallback("destroy", undefined)
-
-        for (let i in this.eventsIds.chat)
-        {
-            // this.app.cancelLongpoll(this.eventsIds.chat[i])
-        }
-
-        this.currentChatCallback = undefined
     }
 
 }

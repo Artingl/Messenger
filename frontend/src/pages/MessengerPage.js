@@ -34,6 +34,8 @@ export default class MessengerPage extends React.Component
             chatOpened: false,
             chatInfo: [],
 
+            chatWindowRef: undefined,
+
             // wait interval on API error. It will grow up to 60 seconds on every error
             lastInterval: 5,
         };
@@ -44,7 +46,7 @@ export default class MessengerPage extends React.Component
         this.eventsHandler = new EventsHandler(this.props.app, this)
         this.eventsHandler.setup()
 
-        this.eventsHandler.setupChatGlobalEvents((n, d) => this.globalEventsHandler(n, d))
+        this.eventsHandler.subscribeEvents((n, d) => this.globalEventsHandler(n, d))
     }
     
     componentDidMount()
@@ -67,7 +69,7 @@ export default class MessengerPage extends React.Component
                 break
 
             case "new_message":
-                this.setNewMessage(data)
+                this.setChatDescription(data)
                 break
 
             default: // invalid event
@@ -76,7 +78,7 @@ export default class MessengerPage extends React.Component
         }
     }
 
-    setNewMessage(data)
+    setChatDescription(data)
     { // update chats description with new message that was sent
         // cancel all typing events for this chat if any
         if (this.chatsEventTimers[data.chat_id] !== undefined)
@@ -132,7 +134,12 @@ export default class MessengerPage extends React.Component
                 }
             }
         }
-
+        
+        // if chat is opened, send key event
+        if (this.state.chatWindowRef !== undefined)
+        {
+            this.state.chatWindowRef.keyPress(event)
+        }
     }
 
     updateChats(chats)
@@ -250,8 +257,7 @@ export default class MessengerPage extends React.Component
 
     closeChat()
     {
-        this.eventsHandler.popChatEvents()
-        this.setState({ chatOpened: false, chatInfo: [] })
+        this.setState({ chatWindowRef: undefined, chatOpened: false, chatInfo: [] })
     }
 
     leftMenuAction()
@@ -339,7 +345,7 @@ export default class MessengerPage extends React.Component
                 {!this.state.chatOpened && <div className="chat-placeholder noselect" style={{ height: "100vh" }}>
                     <p>{langGetString("open_chat")}</p>
                 </div>}
-                {this.state.chatOpened && <ChatWindow messenger={this} app={this.props.app} chatInfo={this.state.chatInfo} />}
+                {this.state.chatOpened && <ChatWindow _ref={(ref) => this.setState({ chatWindowRef: ref })} messenger={this} app={this.props.app} chatInfo={this.state.chatInfo} />}
             </div>
 
         </div>);

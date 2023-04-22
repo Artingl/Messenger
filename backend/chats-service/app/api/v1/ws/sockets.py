@@ -7,6 +7,8 @@ from app.api.v1.ws import protocol
 class WSEndpoint(WebSocketEndpoint):
     encoding = 'json'
 
+    # todo: add limit for packets per second
+
     async def on_connect(self, websocket):
         await websocket.accept()
 
